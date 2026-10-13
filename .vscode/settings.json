@@ -1,0 +1,18 @@
+{
+  // Copilot: usa .github/copilot-instructions.md e .github/instructions/*.instructions.md
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  // Copilot: habilita os prompt files de .github/prompts (/checklist, /commit, /etapa, /revisar)
+  "chat.promptFiles": true,
+  // Copilot: mensagens de commit geradas no padrão do projeto (requisito avaliado)
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Use Conventional Commits em pt-BR: <tipo>(<escopo>): <descrição no imperativo, minúscula, sem ponto final>. Tipos: feat, fix, docs, test, refactor, chore, ci. Escopos: contracts, training, drift, monitoring, governance, data, context."
+    }
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"]
+}
