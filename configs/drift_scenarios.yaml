@@ -1,0 +1,83 @@
+# Cenários de drift da Etapa 2: RASCUNHO, a ser refinado em T2.1 com base na
+# feature importance do baseline (T1.9). Cada janela simula um período de produção.
+#
+# Tipos:
+#   data_drift     → altera P(X): a distribuição da feature muda
+#   concept_drift  → altera P(y|X): o mesmo perfil passa a ter outro risco
+#
+# Operações de data drift (implementadas em src/credit_risk/drift/scenarios.py):
+#   scale  → multiplica a feature por `factor`
+#   shift  → soma `value` à feature
+#   clip   → limita a feature a [min, max]
+#
+# Toda alteração PRECISA de `rationale` (justificativa econômica), que alimenta a
+# análise causal do README (T4.4).
+
+seed: 42
+
+windows:
+  - name: t1
+    description: "Período estável: produção igual à referência (controle)"
+    changes: []
+
+  - name: t2
+    description: "Início da inflação"
+    changes:
+      - type: data_drift
+        feature: person_income
+        op: scale
+        factor: 1.10
+        rationale: "Reajustes nominais de salário acompanham a inflação; a renda nominal sobe sem ganho real."
+
+  - name: t3
+    description: "Inflação persistente + alta de juros"
+    changes:
+      - type: data_drift
+        feature: person_income
+        op: scale
+        factor: 1.20
+        rationale: "Inflação acumulada eleva a renda nominal."
+      - type: data_drift
+        feature: loan_int_rate
+        op: shift
+        value: 2.5
+        rationale: "Alta da taxa básica de juros encarece o crédito."
+
+  - name: t4
+    description: "Desaceleração: desemprego começa a subir"
+    changes:
+      - type: data_drift
+        feature: person_income
+        op: scale
+        factor: 1.25
+        rationale: "Inflação acumulada."
+      - type: data_drift
+        feature: loan_int_rate
+        op: shift
+        value: 4.0
+        rationale: "Juros seguem subindo."
+      - type: data_drift
+        feature: person_emp_length
+        op: scale
+        factor: 0.6
+        rationale: "Demissões e recolocações reduzem o tempo médio de emprego."
+
+  - name: t5
+    description: "Crise: concept drift (mesmo perfil, mais inadimplência)"
+    changes:
+      - type: data_drift
+        feature: person_income
+        op: scale
+        factor: 1.30
+        rationale: "Inflação acumulada."
+      - type: data_drift
+        feature: loan_int_rate
+        op: shift
+        value: 5.0
+        rationale: "Juros altos."
+      - type: concept_drift
+        target: loan_status
+        condition: "loan_percent_income > 0.25"
+        flip_to: 1
+        fraction: 0.30
+        rationale: "Com a perda de poder de compra, clientes com parcela alta em relação à renda passam a inadimplir mais, mesmo com a renda nominal maior."
