@@ -3,8 +3,8 @@
 > Tech Challenge Fase 4 (MLET / FIAP Pós Tech): observabilidade contínua, detecção de
 > drift, qualidade de dados e governança (LGPD) de um modelo de Credit Scoring.
 
-🚧 **Em construção.** Divisão de tarefas em [TODO.md](TODO.md). As seções marcadas com
-`TODO` serão preenchidas ao longo do desenvolvimento.
+O projeto é desenvolvido em quatro etapas. O status das tarefas e os responsáveis estão
+em [TODO.md](TODO.md).
 
 ## Contexto
 
@@ -30,27 +30,49 @@ silenciosa**. Este projeto constrói a camada que:
 ## Como rodar
 
 ```bash
-uv sync                                  # instala as dependências
-uv run python scripts/run_pipeline.py    # executa tudo de ponta a ponta
-uv run pytest                            # testes
+uv sync
+uv run pytest
 ```
 
-TODO(T4.5): instruções para baixar o dataset e descrição de cada script.
+O dataset bruto não é versionado. Para reproduzir a Etapa 1, faça o download pela fonte
+Kaggle `laotse/credit-risk-dataset` e salve o arquivo como
+`data/raw/credit_risk_dataset.csv`. Em seguida:
+
+```bash
+uv run python scripts/prepare_data.py
+uv run python scripts/validate_data.py --make-bad-batch
+uv run python scripts/train_baseline.py
+```
 
 ## Dataset
 
-TODO(T0.2): Credit Risk Dataset (Kaggle): origem, licença, nº de linhas, dicionário de
-variáveis e separação Referência × Produção.
+O projeto usa o **Credit Risk Dataset**, disponibilizado publicamente no Kaggle por
+`laotse/credit-risk-dataset`. O arquivo possui 32.581 registros antes da limpeza e as
+colunas de idade, renda, emprego, empréstimo, taxa de juros, intenção, grau e histórico
+de inadimplência. Após a limpeza e divisão determinística com seed 42, a base limpa
+possui 28.634 registros, a Referência possui 17.180 registros e a Produção possui
+11.454 registros.
+
+O pipeline mantém a Referência e a Produção em arquivos físicos separados. O modelo
+nunca é treinado com a Produção.
 
 ## Etapa 1: Validação de dados (data contracts)
 
-TODO(T4.5): regras do contrato, evidência do lote bloqueado (`reports/validation/`) e
-métricas do baseline (`reports/training/`).
+O contrato Pandera bloqueia a ingestão quando ocorre qualquer violação. As regras rígidas
+incluem idade entre 18 e 100 anos, renda não nula e dentro dos limites definidos,
+ausência de duplicatas, target binário e domínios válidos para variáveis categóricas.
+
+O lote inválido é gerado por `scripts/validate_data.py --make-bad-batch`, que retorna
+exit code 1, registra a falha em `logs/validation.jsonl` e gera a evidência em
+`reports/validation/bad_batch_failures.csv`.
+
+O baseline XGBoost é treinado exclusivamente com a Referência. As métricas estão em
+`reports/training/metrics.json` e as importâncias em
+`reports/training/feature_importance.csv`.
 
 ## Etapa 2: Simulação e detecção de drift
 
-TODO(T4.5): cenários (`configs/drift_scenarios.yaml`), tabela PSI/KS e links para os
-relatórios do Evidently (`reports/drift/`).
+Em desenvolvimento. Consulte [TODO.md](TODO.md) para o status da Etapa 2.
 
 ## Etapa 3: Observabilidade e monitoramento
 

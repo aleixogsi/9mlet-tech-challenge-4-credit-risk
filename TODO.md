@@ -1,199 +1,94 @@
 # 📋 Plano do Projeto
 
-> 🎯 **Entrega final: terça, 17/11** · São 5 semanas · 4 pessoas
+> 🎯 **Projeto com 4 etapas · 4 integrantes**
 
----
+## 👥 Responsáveis
 
-## 👥 Quem faz o quê
-
-Cada pessoa cuida de **uma parte** do projeto do começo ao fim.
-
-| | Parte | Em uma frase | Nome |
-|---|---|---|---|
-| 🟦 | **A: Dados** | Prepara os dados e cria as regras que barram dados ruins | |
-| 🟩 | **B: Modelo** | Treina o modelo de crédito e faz as previsões | |
-| 🟨 | **C: Drift** | Simula a economia mudando e detecta quando os dados mudaram | |
-| 🟥 | **D: Painel** | Monta o painel de saúde do modelo e os alertas | |
-
-A carga de trabalho é parecida para todos.
-
----
-
-## 📅 As 5 semanas
-
-| Semana | Datas | Objetivo |
+| Etapa | Escopo | Responsável |
 |---|---|---|
-| **1** | 13/10 → 19/10 | 🧱 Preparar a base |
-| **2** | 20/10 → 26/10 | ⚙️ Construir o principal de cada parte |
-| **3** | 27/10 → 02/11 | 🔗 Juntar as partes |
-| **4** | 03/11 → 09/11 | 🧪 Testar tudo junto e escrever o README |
-| **5** | 10/11 → 17/11 | 🎬 Gravar o vídeo e entregar |
+| **Etapa 1: Dados e contratos** | Preparação dos dados, contratos e baseline | Eduardo |
+| **Etapa 2: Drift** | Simulação e detecção de Data/Concept Drift | Vini |
+| **Etapa 3: Observabilidade** | Logs, métricas, alertas e painel | Fernando |
+| **Etapa 4: Governança e entrega** | LGPD, documentação, vídeo e entrega | Vitor |
 
-**Toda segunda-feira** a gente confere se a semana foi concluída (reunião de 30 min).
+Cada etapa possui um único responsável. O status é controlado pelos checkboxes abaixo.
 
----
+## 🧭 Etapa 1 · Dados, contratos e baseline · Eduardo
 
-## 🤝 Como trabalhar sem ficar esperando o colega
+- [x] Baixar o dataset e conferir os nomes das colunas `T0.2`
+- [x] Ler e limpar os dados `T1.1`
+- [x] Separar Referência (treino) e Produção `T1.2`
+- [ ] Proteger a branch `main` e criar o modelo de PR `T0.4`
+- [x] Minimizar dados e pseudonimizar identificadores `T1.3`
+- [x] Criar regras rígidas de qualidade `T1.4`
+- [x] Bloquear dados inválidos e gerar relatório de falhas `T1.5`
+- [x] Criar lote inválido demonstrável `T1.6`
+- [x] Testar as regras do contrato `T1.7`
+- [x] Treinar o baseline XGBoost usando somente a Referência `T1.8`
+- [x] Medir a qualidade e listar as features importantes `T1.9`
 
-1. **Não espere ninguém.** Se a sua tarefa precisa de algo que o colega ainda não fez,
-   use os **dados de mentira** que vamos criar na semana 1. Eles têm o mesmo formato dos
-   dados reais. Quando a parte do colega ficar pronta, é só trocar.
-2. **⚠️ = alguém precisa disso.** Tarefas com ⚠️ têm data limite porque outra pessoa
-   depende delas. Faça essas **primeiro**.
-3. **Não mude formatos combinados sozinho.** O formato dos arquivos que passam de uma
-   pessoa para outra está em [context/05-interfaces.md](context/05-interfaces.md). Quer
-   mudar? Avise o grupo antes.
-4. **Cada um mexe só na sua parte.** No README, cada um escreve só a sua seção. Assim
-   não dá conflito no git.
-5. **Revisão em rodízio:** A revisa B · B revisa C · C revisa D · D revisa A. Tente revisar em até 1 dia.
+### ✅ Artefatos concluídos
 
-**Passo a passo de cada tarefa:**
-crie uma branch → faça a tarefa → abra o PR → colega revisa → merge → marque ✅ aqui.
+- [x] `data/raw/credit_risk_dataset.csv`
+- [x] `data/reference/reference.parquet`
+- [x] `data/production/production_base.parquet`
+- [x] `data/bad_batches/bad_batch.parquet`
+- [x] `reports/validation/bad_batch_failures.csv`
+- [x] `reports/training/metrics.json`
+- [x] `reports/training/feature_importance.csv`
+- [x] `models/baseline_v1.joblib`
+- [x] `tests/test_contracts.py`
 
-> 💡 O código (ex.: `T1.4`) serve para achar a tarefa no projeto. Busque por `TODO(T1.4)`
-> e você cai direto no arquivo certo.
+## 🧭 Etapa 2 · Simulação e detecção de drift · Vini
 
----
+- [ ] Criar dados sintéticos para testes `T0.5`
+- [ ] Criar funções de alteração econômica dos dados `T2.2`
+- [ ] Gerar janelas de produção t1–t5 com intensidade crescente `T2.3`
+- [ ] Ajustar a simulação para alterar as features mais importantes `T2.1`
+- [ ] Gerar predições das janelas simuladas `T2.4`
+- [ ] Gerar relatórios Evidently com PSI e KS `T2.6`
+- [ ] Escrever os testes da simulação e detecção `T2.7`
 
-## 🧱 Semana 1 · 13/10 → 19/10 · Preparar a base
+## 🧭 Etapa 3 · Observabilidade e monitoramento · Fernando
 
-**Ao final da semana:** dados reais baixados, dados de mentira prontos, cada um com a
-primeira tarefa entregue.
+- [ ] Criar arquivos de exemplo para desenvolvimento do painel `T3.0`
+- [ ] Criar o registro centralizado de predições sem PII `T3.1`
+- [ ] Calcular métricas de saúde `T3.2`
+- [ ] Criar alertas de degradação `T3.3`
+- [ ] Montar o painel com métricas, alertas e links `T3.4`
+- [ ] Fazer o painel ler os arquivos reais `T3.5`
+- [ ] Documentar as métricas de saúde no README `T3.6`
+- [ ] Gerar e versionar os relatórios e logs finais `T3.8`
+- [ ] Implementar o extra Grafana + Prometheus, se adotado `T3.7`
 
-### 🟦 A: Dados
-- [ ] ⚠️ **até qui 15/10**: Baixar o dataset do Kaggle e conferir os nomes das colunas. Se a licença permitir, colocar o arquivo no git (assim o avaliador roda sem conta no Kaggle) `T0.2`
-- [ ] Ler e limpar os dados (tirar vazios, idades e rendas absurdas, linhas repetidas) `T1.1`
-- [ ] ⚠️ **até seg 19/10**: Separar os dados em **Referência** (treino) e **Produção** `T1.2`
+## 🧭 Etapa 4 · Governança, documentação e entrega · Vitor
 
-### 🟩 B: Modelo
-- [ ] Proteger a branch `main` no GitHub e criar o modelo de PR `T0.4`
-- [ ] Criar o **registro das previsões** (log, sem dados pessoais) `T3.1`
-- [ ] Esconder os dados pessoais (trocar o ID por um código) `T1.3`
+- [ ] Documentar o tratamento de dados pessoais no README `T4.1`
+- [ ] Documentar base legal e retenção no README `T4.2`
+- [ ] Gerar relatório de vieses e documentar a mitigação `T4.3`
+- [ ] Documentar a análise causal da degradação `T4.4`
+- [ ] Documentar como executar o projeto e consultar as evidências `T4.5`
+- [ ] Escrever o roteiro do vídeo STAR `T4.6`
+- [ ] Gravar o vídeo STAR com até 5 minutos `T4.7`
+- [ ] Fazer a revisão final dos requisitos, README e vídeo `T4.8`
+- [ ] Configurar testes automáticos em cada Pull Request `T0.6`
 
-### 🟨 C: Drift
-- [ ] ⚠️ **até qui 15/10**: Criar o gerador de **dados de mentira** para o time testar `T0.5`
-- [ ] Criar as funções que **alteram os dados** para simular a economia mudando `T2.2`
+## 🎁 Tarefas concluídas de preparação
 
-> Nada disso depende de ninguém: dá para testar com números aleatórios.
-
-### 🟥 D: Painel
-- [ ] ⚠️ **até qua 14/10**: Criar **arquivos de exemplo** (logs e relatórios falsos) para montar o painel `T3.0`
-- [ ] Calcular as **métricas de saúde** (volume, erros, tempo de resposta…) `T3.2`
-- [ ] Rascunhar no README a **base legal (LGPD)** e por quanto tempo guardamos os dados `T4.2`
-
----
-
-## ⚙️ Semana 2 · 20/10 → 26/10 · Construir o principal
-
-**Ao final da semana:** dados ruins sendo barrados, modelo treinado, dados com drift
-gerados, alertas funcionando.
-
-### 🟦 A: Dados
-- [ ] Criar as **regras de qualidade** (mínimo 3, ex.: idade ≥ 18, renda preenchida, sem repetidos) `T1.4`
-- [ ] ⚠️ **até seg 26/10**: Fazer as regras **bloquearem** dados ruins e gerar um relatório do erro `T1.5`
-
-### 🟩 B: Modelo
-- [ ] ⚠️ **até seg 26/10**: Treinar o modelo (XGBoost) usando só os dados de Referência `T1.8`
-- [ ] ⚠️ **até seg 26/10**: Medir a qualidade do modelo e listar as colunas mais importantes `T1.9`
-
-### 🟨 C: Drift
-- [ ] ⚠️ **até seg 26/10**: Gerar os **meses simulados** (t1 a t5), com a economia piorando aos poucos `T2.3`
-- [ ] Escrever os testes da sua parte `T2.7`
-
-### 🟥 D: Painel
-- [ ] Criar os **alertas** (ex.: "muitas colunas mudaram", "modelo piorou") `T3.3`
-- [ ] Montar o **painel**: uma página com as métricas de saúde, os alertas e links para os relatórios `T3.4`
-
-> 💡 D continua usando os arquivos de exemplo. Os dados reais só chegam na semana 3.
-
----
-
-## 🔗 Semana 3 · 27/10 → 02/11 · Juntar as partes
-
-**Ao final da semana:** previsões reais registradas, relatórios de drift reais, painel
-usando dados reais.
-
-### 🟦 A: Dados
-- [ ] Criar um **lote de dados com erros** de propósito, para mostrar as regras barrando `T1.6`
-- [ ] Escrever os testes das regras `T1.7`
-
-### 🟩 B: Modelo
-- [ ] ⚠️ **até sex 30/10**: Fazer as **previsões** dos meses simulados e registrar no log `T2.4`
-- [ ] Gerar o **relatório de vieses** (o modelo é injusto com algum grupo, ex.: faixa de idade?) e escrever essa seção do README `T4.3`
-
-### 🟨 C: Drift
-- [ ] Ajustar a simulação para mexer nas **colunas mais importantes** do modelo `T2.1`
-- [ ] ⚠️ **até seg 02/11**: Gerar os **relatórios de drift** no Evidently, com os testes PSI e KS `T2.6`
-
-### 🟥 D: Painel
-- [ ] Fazer o painel ler os **arquivos reais** `T3.5`
-
----
-
-## 🧪 Semana 4 · 03/11 → 09/11 · Testar tudo junto e escrever o README
-
-**Ao final da semana (seg 09/11):** 🔒 **código congelado**. Tudo roda do começo ao fim e
-o README está completo. Depois disso, só correções.
-
-### 👥 Todos
-- [ ] 📞 **Quarta 04/11: encontro de integração (~1h30).** Todos rodam o projeto inteiro
-  juntos. O que der erro, o dono da parte corrige.
-
-### 🟦 A: Dados
-- [ ] README: como tratamos os **dados pessoais** `T4.1`
-
-### 🟩 B: Modelo
-- [ ] Escrever o **roteiro do vídeo** (quem fala o quê, o que mostrar) `T4.6`
-- [ ] Rodar os testes automaticamente a cada PR (GitHub Actions) `T0.6`
-
-### 🟨 C: Drift
-- [ ] README: **por que o modelo piorou** (causa → efeito → o que fazer) `T4.4`
-
-### 🟥 D: Painel
-- [ ] README: quais **métricas de saúde** acompanhamos `T3.6`
-- [ ] README: **como rodar o projeto** e onde ver cada resultado `T4.5`
-- [ ] ⚠️ **até seg 09/11**: Rodar tudo uma última vez e colocar no git os **relatórios e logs finais** (o avaliador precisa ver os logs) `T3.8`
-
----
-
-## 🎬 Semana 5 · 10/11 → 17/11 · Vídeo e entrega
-
-### 👥 Todos
-- [ ] **ter 10 → sex 13/11: gravar o vídeo** (máx. 5 min). Cada um grava ~1 min da sua parte e B edita. `T4.7`
-  - 🟩 B: o problema (modelos de crédito piorando sem ninguém perceber)
-  - 🟦 A: o que precisávamos resolver + regras barrando dados ruins
-  - 🟨 C: simulação do drift e relatórios
-  - 🟥 D: painel, alertas e LGPD
-- [ ] **sáb 14 → seg 16/11: revisão final**: conferir requisitos, README e link do vídeo `T4.8`
-- [ ] **ter 17/11: 🎯 ENTREGA**
-
----
-
-## 🎁 Extras (para quem terminar antes)
-
-- [ ] Painel no Grafana + Prometheus (opcional no enunciado) `T3.7`
-- [ ] Ajudar a escrever testes de outra parte (combine com o dono)
-
-## ✔️ Já feito
-
-- [x] Ambiente Python configurado (cada um só roda `uv sync`) `T0.1`
+- [x] Ambiente Python configurado (`uv sync`) `T0.1`
 - [x] Estrutura de pastas e arquivos do projeto
 - [x] Configuração do Claude e do Copilot
-
----
 
 ## 📖 Glossário rápido
 
 | Termo | O que é |
 |---|---|
-| **Referência** | Dados "do passado", usados para treinar o modelo |
-| **Produção** | Dados "do presente", onde a economia mudou |
-| **Drift** | Quando os dados de hoje ficam diferentes dos dados do treino |
-| **Data drift** | Mudou o perfil dos clientes (ex.: a renda subiu com a inflação) |
-| **Concept drift** | Mesmo perfil, mas o comportamento mudou (ex.: agora atrasa mais) |
-| **PSI / KS** | Testes estatísticos que medem o tamanho da mudança (calculados pelo Evidently) |
+| **Referência** | Dados do passado usados para treinar o modelo |
+| **Produção** | Dados atuais onde a economia pode ter mudado |
+| **Drift** | Mudança dos dados atuais em relação aos dados de treino |
+| **Data drift** | Mudança no perfil ou distribuição dos clientes |
+| **Concept drift** | Mudança no comportamento para um mesmo perfil |
+| **PSI / KS** | Testes estatísticos de mudança de distribuição |
 | **Contrato de dados** | Regras que os dados precisam seguir para entrar no modelo |
-| **Dados de mentira** | Dados falsos no mesmo formato dos reais, para testar sem esperar ninguém |
-| **Evidently** | Ferramenta que gera os relatórios de drift |
-| **PR** | Pull Request: pedido para juntar o seu código ao projeto principal |
-| **Code freeze** | Data a partir da qual não entra código novo, só correções |
+| **Evidently** | Ferramenta de relatórios de drift |
+| **PR** | Pull Request para integrar alterações ao projeto |

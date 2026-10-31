@@ -6,13 +6,13 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Etapa 1: Validação de Dados (25%)
 
-- [ ] Dataset financeiro binário com **≥ 5.000 amostras** escolhido e documentado
-- [ ] Dataset de **Referência** separado do de **Produção** (arquivos/pastas distintos)
-- [ ] Classificador baseline treinado (Scikit-Learn/XGBoost) com métricas registradas
-- [ ] Contrato de dados em **Pandera ou Great Expectations**
-- [ ] **≥ 3 regras rígidas** (ex.: idade > 18, renda não nula, sem duplicatas)
-- [ ] Lote com erros forçado → contrato **falha e bloqueia a ingestão** (demonstrável)
-- [ ] Script de validação operante (entregável)
+- [x] Dataset financeiro binário com **≥ 5.000 amostras** escolhido e documentado
+- [x] Dataset de **Referência** separado do de **Produção** (arquivos/pastas distintos)
+- [x] Classificador baseline treinado (Scikit-Learn/XGBoost) com métricas registradas
+- [x] Contrato de dados em **Pandera ou Great Expectations**
+- [x] **≥ 3 regras rígidas** (ex.: idade > 18, renda não nula, sem duplicatas)
+- [x] Lote com erros forçado → contrato **falha e bloqueia a ingestão** (demonstrável)
+- [x] Script de validação operante (entregável)
 
 ## Etapa 2: Detecção de Drift (25%)
 

@@ -18,6 +18,10 @@ models/*.joblib
 models/*.json
 !models/.gitkeep
 
+# Logs locais de desenvolvimento
+logs/*.jsonl
+!logs/.gitkeep
+
 # Python
 __pycache__/
 *.py[cod]
