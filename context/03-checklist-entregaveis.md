@@ -52,8 +52,8 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Repositório
 
-- [ ] Pipeline de validação de dados configurado
+- [x] Pipeline de validação de dados configurado
 - [ ] Scripts de simulação e detecção de drift
 - [ ] Relatórios HTML gerados e versionados
 - [ ] Governança consolidada no `README.md`
-- [ ] Histórico de commits semântico e organizado
+- [x] Histórico de commits semântico e organizado
