@@ -11,7 +11,16 @@ if TYPE_CHECKING:
 def make_bad_batch(df: pd.DataFrame, seed: int) -> pd.DataFrame:
     """Copia uma amostra válida e injeta pelo menos uma violação de CADA regra rígida.
 
-    TODO(T1.6): ex.: idade = 15, renda nula, renda negativa, linhas duplicadas,
-    categoria desconhecida. Documente no docstring quais linhas violam quais regras.
+    Injeta idade inválida, renda nula, categoria inválida, target inválido e duplicata.
     """
-    raise NotImplementedError("T1.6")
+    from credit_risk import config
+
+    if len(df) < 5:
+        raise ValueError("São necessárias ao menos cinco linhas para gerar o lote ruim")
+    result = df.sample(frac=1, random_state=seed).reset_index(drop=True).copy()
+    result.loc[0, "person_age"] = config.MIN_AGE - 1
+    result.loc[1, "person_income"] = None
+    result.loc[2, "loan_intent"] = "UNKNOWN"
+    result.loc[3, config.TARGET] = 2
+    result.loc[4] = result.loc[0]
+    return result

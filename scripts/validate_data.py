@@ -13,6 +13,17 @@ import logging
 import sys
 from pathlib import Path
 
+import pandas as pd
+
+from credit_risk import config
+from credit_risk.contracts.bad_batch import make_bad_batch
+from credit_risk.contracts.schemas import build_inference_schema, build_training_schema
+from credit_risk.contracts.validator import (
+    DataContractError,
+    validate_or_block,
+    write_validation_report,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,10 +37,25 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    logger.info("Lote: %s | schema: %s", args.path, args.schema)
-    # TODO(T1.5/T1.6): carregar o lote, validate_or_block; em DataContractError,
-    # write_validation_report e return 1. Com --make-bad-batch, gerar config.BAD_BATCH_FILE.
-    raise NotImplementedError("T1.5")
+    if args.make_bad_batch:
+        source = pd.read_parquet(config.REFERENCE_FILE)
+        batch = make_bad_batch(source, config.SEED)
+        config.BAD_BATCHES_DIR.mkdir(parents=True, exist_ok=True)
+        batch.to_parquet(config.BAD_BATCH_FILE, index=False)
+        args.path = config.BAD_BATCH_FILE
+        args.schema = "training"
+    if args.path is None:
+        raise ValueError("Informe um lote ou use --make-bad-batch")
+    frame = pd.read_parquet(args.path) if args.path.suffix == ".parquet" else pd.read_csv(args.path)
+    schema = build_training_schema() if args.schema == "training" else build_inference_schema()
+    try:
+        validate_or_block(frame, schema, args.path.stem)
+    except DataContractError as error:
+        write_validation_report(error.failures, args.path.stem, config.VALIDATION_REPORTS_DIR)
+        logger.error("%s", error)
+        return 1
+    logger.info("Lote aprovado: %s", args.path)
+    return 0
 
 
 if __name__ == "__main__":

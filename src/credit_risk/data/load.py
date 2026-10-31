@@ -12,7 +12,19 @@ if TYPE_CHECKING:
 def load_raw(path: Path) -> pd.DataFrame:
     """Lê o CSV bruto do Credit Risk Dataset.
 
-    TODO(T1.1): ler com tipos explícitos e validar se as colunas esperadas
-    (config.FEATURES + config.TARGET) existem.
+    O identificador interno é criado nesta borda e não depende de dados pessoais.
     """
-    raise NotImplementedError("T1.1")
+    import pandas as pd
+
+    from credit_risk import config
+
+    if not path.exists():
+        raise FileNotFoundError(f"Dataset bruto não encontrado: {path}")
+    frame = pd.read_csv(path)
+    expected = set(config.FEATURES) | {config.TARGET}
+    missing = sorted(expected - set(frame.columns))
+    if missing:
+        raise ValueError(f"Colunas obrigatórias ausentes no dataset: {missing}")
+    frame = frame[config.FEATURES + [config.TARGET]].copy()
+    frame.insert(0, config.ID_COLUMN, [f"application_{i:08d}" for i in range(len(frame))])
+    return frame

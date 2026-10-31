@@ -8,15 +8,27 @@ from __future__ import annotations
 import logging
 
 from credit_risk import config
+from credit_risk.data.clean import clean
+from credit_risk.data.load import load_raw
+from credit_risk.data.privacy import minimize_columns
+from credit_risk.data.split import split_reference_production
 
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
     logger.info("Lendo %s", config.RAW_DATASET_FILE)
-    # TODO(T1.1/T1.2/T1.3): load_raw → minimize_columns → clean →
-    # split_reference_production → salvar REFERENCE_FILE e PRODUCTION_BASE_FILE
-    raise NotImplementedError("T1.2")
+    frame = load_raw(config.RAW_DATASET_FILE)
+    frame = minimize_columns(frame, [config.ID_COLUMN, *config.FEATURES, config.TARGET])
+    cleaned = clean(frame)
+    reference, production = split_reference_production(
+        cleaned, config.REFERENCE_FRACTION, config.SEED
+    )
+    config.REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
+    config.PRODUCTION_DIR.mkdir(parents=True, exist_ok=True)
+    reference.to_parquet(config.REFERENCE_FILE, index=False)
+    production.to_parquet(config.PRODUCTION_BASE_FILE, index=False)
+    logger.info("Referência: %d linhas | Produção: %d linhas", len(reference), len(production))
 
 
 if __name__ == "__main__":

@@ -11,6 +11,11 @@ if TYPE_CHECKING:
 def train_baseline(reference: pd.DataFrame) -> Any:
     """Treina o pipeline na Referência (já validada pelo contrato) e devolve o modelo.
 
-    TODO(T1.8): split treino/validação interno, fit e retorno do pipeline treinado.
+    A coluna de identificação nunca entra no modelo.
     """
-    raise NotImplementedError("T1.8")
+    from credit_risk import config
+    from credit_risk.training.pipeline import build_pipeline
+
+    model = build_pipeline(config.NUMERIC_FEATURES, config.CATEGORICAL_FEATURES, config.SEED)
+    model.fit(reference[config.FEATURES], reference[config.TARGET])
+    return model
