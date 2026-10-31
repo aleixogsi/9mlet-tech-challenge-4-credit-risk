@@ -1,0 +1,8 @@
+schema_context,column,check,check_number,failure_case,index
+Column,application_id,field_uniqueness,,application_00009043,0
+Column,application_id,field_uniqueness,,application_00009043,4
+Column,person_age,"in_range(18, 100)",0,17.0,0
+Column,person_age,"in_range(18, 100)",0,17.0,4
+Column,person_income,not_nullable,,,1
+Column,loan_intent,"isin(['PERSONAL', 'EDUCATION', 'MEDICAL', 'VENTURE', 'HOMEIMPROVEMENT', 'DEBTCONSOLIDATION'])",0,UNKNOWN,2
+Column,loan_status,"isin([0, 1])",0,2,3

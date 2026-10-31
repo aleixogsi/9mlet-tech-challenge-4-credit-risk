@@ -1,0 +1,43 @@
+# Dados (nunca versionar: podem conter PII; ver context/02-convencoes.md)
+# (ignora todo o conteúdo, mas mantém a estrutura de pastas via .gitkeep)
+data/**
+!data/**/
+!data/**/.gitkeep
+# Dataset bruto: descomente SOMENTE se a licença permitir redistribuição (T0.2),
+# para o avaliador rodar o projeto sem conta no Kaggle.
+# !data/raw/credit_risk_dataset.csv
+
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Modelos grandes
+models/*.pkl
+models/*.joblib
+models/*.json
+!models/.gitkeep
+
+# Logs locais de desenvolvimento
+logs/*.jsonl
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Claude Code (configs pessoais)
+.claude/settings.local.json
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.idea/
