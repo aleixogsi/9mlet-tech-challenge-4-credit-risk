@@ -27,6 +27,7 @@ LOGS_DIR = ROOT_DIR / "logs"
 CONFIGS_DIR = ROOT_DIR / "configs"
 
 RAW_DATASET_FILE = RAW_DIR / "credit_risk_dataset.csv"
+KAGGLE_DATASET_SLUG = "laotse/credit-risk-dataset"
 REFERENCE_FILE = REFERENCE_DIR / "reference.parquet"
 PRODUCTION_BASE_FILE = PRODUCTION_DIR / "production_base.parquet"
 BAD_BATCH_FILE = BAD_BATCHES_DIR / "bad_batch.parquet"

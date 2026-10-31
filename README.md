@@ -29,20 +29,67 @@ silenciosa**. Este projeto constrói a camada que:
 
 ## Como rodar
 
+### Pré-requisitos
+
+- Python 3.11 ou superior;
+- `uv` instalado;
+- acesso à internet para o download pelo KaggleHub.
+
+O KaggleHub utiliza a sessão autenticada disponível no ambiente. Se o Kaggle solicitar
+autenticação, configure-a localmente conforme a documentação do KaggleHub. Credenciais
+e arquivos `.env` nunca devem ser adicionados ao repositório.
+
+### Execução completa da Etapa 1
+
 ```bash
 uv sync
-uv run pytest
-```
-
-O dataset bruto não é versionado. Para reproduzir a Etapa 1, faça o download pela fonte
-Kaggle `laotse/credit-risk-dataset` e salve o arquivo como
-`data/raw/credit_risk_dataset.csv`. Em seguida:
-
-```bash
+uv run python scripts/download_data.py
 uv run python scripts/prepare_data.py
 uv run python scripts/validate_data.py --make-bad-batch
 uv run python scripts/train_baseline.py
+uv run pytest
 ```
+
+O fluxo executa as seguintes operações:
+
+1. `download_data.py` baixa o dataset público `laotse/credit-risk-dataset`, valida as
+   colunas obrigatórias e salva o CSV em `data/raw/credit_risk_dataset.csv`;
+2. `prepare_data.py` remove registros inválidos, cria identificadores internos e separa
+   Referência e Produção em arquivos Parquet distintos;
+3. `validate_data.py --make-bad-batch` gera um lote com violações intencionais, executa o
+   contrato Pandera e demonstra o bloqueio com exit code `1`;
+4. `train_baseline.py` valida a Referência, treina o XGBoost e salva as métricas e
+   importâncias das features.
+
+Para validar um lote já existente:
+
+```bash
+uv run python scripts/validate_data.py data/reference/reference.parquet --schema training
+uv run python scripts/validate_data.py data/bad_batches/bad_batch.parquet --schema training
+```
+
+O segundo comando deve falhar com exit code `1`.
+
+### Execução sem download automático
+
+Se o ambiente não permitir o download pelo KaggleHub, baixe manualmente o arquivo
+`credit_risk_dataset.csv` pela mesma fonte e salve-o em `data/raw/`. A partir daí, execute
+os scripts de preparação, validação e treinamento normalmente.
+
+### Artefatos gerados
+
+| Caminho | Finalidade |
+|---|---|
+| `data/reference/reference.parquet` | Base de Referência usada no treino |
+| `data/production/production_base.parquet` | Base de Produção separada |
+| `data/bad_batches/bad_batch.parquet` | Lote inválido para demonstração |
+| `reports/validation/bad_batch_failures.csv` | Evidência das regras violadas |
+| `reports/training/metrics.json` | Métricas do baseline |
+| `reports/training/feature_importance.csv` | Importância das features |
+| `models/baseline_v1.joblib` | Modelo treinado localmente |
+
+Datasets, modelos e logs locais não são versionados. Os relatórios pequenos e
+reprodutíveis são versionados como evidência da execução.
 
 ## Dataset
 

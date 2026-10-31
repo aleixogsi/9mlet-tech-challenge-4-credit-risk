@@ -15,7 +15,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 
 ## 🧭 Etapa 1 · Dados, contratos e baseline · Eduardo
 
-- [x] Baixar o dataset e conferir os nomes das colunas `T0.2`
+- [x] Automatizar o download e validar os nomes das colunas `T0.2`
 - [x] Ler e limpar os dados `T1.1`
 - [x] Separar Referência (treino) e Produção `T1.2`
 - [ ] Proteger a branch `main` e criar o modelo de PR `T0.4`

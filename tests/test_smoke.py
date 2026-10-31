@@ -1,6 +1,8 @@
 """Garante que o esqueleto do pacote importa e que a configuração é coerente."""
 
 import importlib
+import importlib.util
+from pathlib import Path
 
 import pytest
 
@@ -48,3 +50,17 @@ def test_drift_thresholds_are_ordered() -> None:
 
 def test_drift_scenarios_file_exists() -> None:
     assert config.DRIFT_SCENARIOS_FILE.exists()
+
+
+def test_download_data_validates_expected_columns(tmp_path) -> None:
+    script_path = Path(__file__).parents[1] / "scripts" / "download_data.py"
+    spec = importlib.util.spec_from_file_location("download_data", script_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    columns = [*config.FEATURES, config.TARGET]
+    path = tmp_path / "credit_risk_dataset.csv"
+    path.write_text(",".join(columns) + "\n", encoding="utf-8")
+    module.validate_columns(path)
