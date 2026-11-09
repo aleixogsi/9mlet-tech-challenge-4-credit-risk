@@ -119,7 +119,88 @@ O baseline XGBoost é treinado exclusivamente com a Referência. As métricas es
 
 ## Etapa 2: Simulação e detecção de drift
 
-Em desenvolvimento. Consulte [TODO.md](TODO.md) para o status da Etapa 2.
+### Execução
+
+```bash
+uv run python scripts/simulate_drift.py   # gera data/production/t1..t5.parquet
+uv run python scripts/predict.py          # valida pelo contrato, prediz e grava logs/predictions.jsonl
+uv run python scripts/detect_drift.py     # relatórios Evidently em reports/drift/
+uv run pytest tests/test_drift.py tests/test_drift_pipeline.py tests/test_inference.py
+```
+
+Os scripts aceitam `--window t3` (predição e detecção) para processar só uma janela.
+Defina `PSEUDONYMIZATION_SALT` no `.env` para que o `record_id` do log seja estável entre
+execuções; sem ele, o script usa um salt aleatório por execução e o log continua sem PII.
+
+### Simulação da passagem do tempo
+
+`configs/drift_scenarios.yaml` descreve cinco janelas de produção com 5.000 propostas
+cada, amostradas da base de Produção (nunca da Referência) com seed fixa. Cada mudança
+tem uma justificativa econômica, que alimenta a análise causal da Etapa 4.
+
+| Janela | Cenário | Data drift (P(X)) | Concept drift (P(y\|X)) |
+|---|---|---|---|
+| t1 | Controle | nenhum | nenhum |
+| t2 | Início da inflação | renda ×1,10; juros +0,75 p.p. | nenhum |
+| t3 | Inflação + juros | renda ×1,20; juros +2,5 p.p.; parcela/renda +0,03 | nenhum |
+| t4 | Desaceleração | renda ×1,25; juros +4 p.p.; parcela/renda +0,06; tempo de emprego ×0,6 | 15% dos bons pagadores com parcela/renda > 0,25 passam a inadimplir |
+| t5 | Crise | renda ×1,30; juros +5 p.p.; parcela/renda +0,08; tempo de emprego ×0,5 | 30% dos bons pagadores com parcela/renda > 0,25 passam a inadimplir |
+
+As features alteradas foram escolhidas pela importância do baseline
+(`reports/training/feature_importance.csv`): `loan_percent_income` e `loan_int_rate`
+são as duas features numéricas mais importantes do modelo, e `person_income` e
+`person_emp_length` completam o cenário de inflação e desemprego.
+
+### Detecção
+
+`scripts/detect_drift.py` compara a Referência com cada janela usando o **Evidently AI**:
+
+- **PSI** por feature (`method="psi"`), classificado em `stable` (< 0,10), `warning`
+  (0,10–0,25) e `drift` (> 0,25);
+- **Kolmogorov-Smirnov** por feature numérica (`method="ks"`, drift se p-valor < 0,05);
+- **prediction drift**: PSI do score do modelo;
+- **performance** com o rótulo real (`ClassificationPreset`), para evidenciar o concept
+  drift.
+
+Uma feature é marcada com drift quando o PSI passa de 0,25 **ou** o p-valor do KS fica
+abaixo de 0,05. O veredito de dataset drift do HTML usa o mesmo limiar dos alertas
+(30% das features).
+
+### Resultados
+
+| Janela | Features com drift | Quais | PSI do score | Score médio | AUC | KS |
+|---|---|---|---|---|---|---|
+| t1 | 2/11 (18%) | `person_age`, `person_emp_length` | 0,004 | 0,214 | 0,924 | 0,711 |
+| t2 | 2/11 (18%) | `person_income`, `loan_int_rate` | 0,022 | 0,224 | 0,914 | 0,691 |
+| t3 | 3/11 (27%) | `person_income`, `loan_int_rate`, `loan_percent_income` | 0,224 | 0,288 | 0,891 | 0,647 |
+| t4 | 4/11 (36%) | `person_income`, `person_emp_length`, `loan_int_rate`, `loan_percent_income` | 0,625 | 0,390 | 0,842 | 0,567 |
+| t5 | 4/11 (36%) | `person_income`, `person_emp_length`, `loan_int_rate`, `loan_percent_income` | 0,830 | 0,444 | 0,801 | 0,480 |
+
+Na Referência, o score médio é 0,217 e a AUC é 0,942.
+
+Leitura dos resultados:
+
+- o drift cresce de t2 a t5 e atinge exatamente as features alteradas na simulação;
+- `person_income` é detectada pelo KS (p-valor ≈ 0), mas o PSI dela fica em 0,07 mesmo
+  em t5: o PSI, calculado por faixas, foi pouco sensível a esse deslocamento, enquanto o
+  KS compara a distribuição acumulada inteira. Por isso o projeto usa os dois testes;
+- a AUC já cai com o data drift (0,924 em t1 para 0,891 em t3) e cai mais com o concept
+  drift de t4 e t5, que muda só o rótulo e não as features: 0,801 em t5. O score médio
+  dobra em relação à Referência;
+- na janela de controle t1, o KS marca `person_age` e `person_emp_length` com p-valor
+  ≈ 0,035, enquanto o PSI de todas as features fica abaixo de 0,02. Com amostras grandes,
+  o KS detecta diferenças pequenas de amostragem. Isso não chega ao limiar de 30% e
+  mostra por que o alerta considera a proporção de features e não uma feature isolada.
+
+### Evidências
+
+| Caminho | Conteúdo |
+|---|---|
+| `reports/drift/drift_<janela>.html` | Relatório Evidently de data drift e prediction drift |
+| `reports/drift/performance_<janela>.html` | Relatório Evidently de performance (concept drift) |
+| `reports/drift/psi_ks_<janela>.csv` | PSI, p-valor do KS e status por feature |
+| `reports/drift/drift_summary.json` | Resumo consumido pelo monitoramento (Etapa 3) |
+| `logs/predictions.jsonl` | Log de predições sem PII (versionado só na execução final, T3.8) |
 
 ## Etapa 3: Observabilidade e monitoramento
 
