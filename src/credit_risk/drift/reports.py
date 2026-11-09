@@ -22,11 +22,12 @@ def build_drift_report(
 ) -> dict[str, Any]:
     """Gera o HTML do Evidently (data drift + prediction drift) e retorna as métricas em dict.
 
-    Usa a API do Evidently 0.7 (versão fixada no uv.lock). Para cada feature de
-    `config.FEATURES`, roda o drift com PSI (`DataDriftPreset`, threshold
-    `config.PSI_DRIFT`, que destaca no HTML as features com drift) e, para as numéricas,
-    também com KS (`ValueDrift`, threshold `config.KS_PVALUE`). Se os dois DataFrames
-    tiverem a coluna `score`, mede o prediction drift do score com PSI e KS.
+    Usa a API do Evidently 0.7 (versão fixada no uv.lock). O `DataDriftPreset` testa as
+    numéricas com KS (threshold `config.KS_PVALUE`) e as categóricas com PSI (threshold
+    `config.PSI_DRIFT`), e o veredito do dataset usa `config.ALERT_DRIFT_SHARE`: assim o
+    HTML destaca as mesmas features e o mesmo veredito do `drift_summary.json`. O PSI de
+    cada numérica entra como `ValueDrift(method="psi")`. Se os dois DataFrames tiverem a
+    coluna `score`, mede o prediction drift do score com PSI e KS.
 
     Retorna `{"evidently": <snapshot.dict()>, "rows": ..., "reference_rows": ...,
     "prediction_drift": {...} | None}`.
@@ -44,10 +45,17 @@ def build_drift_report(
         numerical_columns=numeric, categorical_columns=list(config.CATEGORICAL_FEATURES)
     )
     metrics: list[Any] = [
-        DataDriftPreset(columns=list(config.FEATURES), method="psi", threshold=config.PSI_DRIFT)
+        DataDriftPreset(
+            columns=list(config.FEATURES),
+            num_method="ks",
+            num_threshold=config.KS_PVALUE,
+            cat_method="psi",
+            cat_threshold=config.PSI_DRIFT,
+            drift_share=config.ALERT_DRIFT_SHARE,
+        )
     ]
     metrics += [
-        ValueDrift(column=column, method="ks", threshold=config.KS_PVALUE)
+        ValueDrift(column=column, method="psi", threshold=config.PSI_DRIFT)
         for column in config.NUMERIC_FEATURES
     ]
     if has_score:

@@ -339,3 +339,13 @@ def test_performance_report_drops_with_concept_drift(reference_frame, tmp_path) 
     assert stable["auc"] == pytest.approx(stable["auc_reference"], abs=1e-6)
     assert drifted["auc"] < stable["auc"] - 0.1
     assert drifted["ks"] < stable["ks"]
+
+
+def test_dataset_drift_verdict_uses_alert_share(reference_frame, tmp_path) -> None:
+    metrics = build_drift_report(reference_frame, reference_frame, tmp_path / "v.html")
+    counts = [
+        m
+        for m in metrics["evidently"]["metrics"]
+        if m["config"]["type"].endswith("DriftedColumnsCount")
+    ]
+    assert counts[0]["config"]["drift_share"] == config.ALERT_DRIFT_SHARE
