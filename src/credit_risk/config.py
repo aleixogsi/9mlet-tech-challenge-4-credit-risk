@@ -78,6 +78,8 @@ DRIFT_WINDOW_SIZE = 5_000  # linhas por janela de produção simulada (t1..tN)
 
 # --- Health / alert thresholds (Etapa 3) -------------------------------------
 APPROVAL_THRESHOLD = 0.5  # score de default acima disso → crédito negado
+PREDICTION_BATCH_SIZE = 100  # registros por chamada do modelo (micro-lote) em predict.py
+PSEUDONYMIZATION_SALT_ENV = "PSEUDONYMIZATION_SALT"  # variável de ambiente do salt (LGPD)
 ALERT_DRIFT_SHARE = 0.30  # alerta se ≥ 30% das features derivarem
 ALERT_NULL_PREDICTIONS_PCT = 0.01  # alerta se > 1% de predições nulas
 ALERT_LATENCY_P95_MS = 200.0

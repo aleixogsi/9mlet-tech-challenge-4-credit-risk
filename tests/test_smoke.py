@@ -22,6 +22,7 @@ MODULES = [
     "credit_risk.training.fairness",
     "credit_risk.drift.scenarios",
     "credit_risk.drift.reports",
+    "credit_risk.inference",
     "credit_risk.monitoring.prediction_logger",
     "credit_risk.monitoring.health",
     "credit_risk.monitoring.alerts",
