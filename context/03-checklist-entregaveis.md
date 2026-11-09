@@ -16,14 +16,14 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Etapa 2: Detecção de Drift (25%)
 
-- [ ] "Dataset de Produção" simulando a passagem do tempo
-- [ ] Distribuição alterada em **≥ 2 variáveis importantes**
-- [ ] Simulação de **Data Drift** (P(X))
-- [ ] Simulação de **Concept Drift** (P(y|X))
-- [ ] Predições geradas para o dataset de Produção
-- [ ] Comparação Referência × Produção com **Evidently AI**
-- [ ] Testes estatísticos (**PSI** e/ou **Kolmogorov-Smirnov**) por feature
-- [ ] **Relatório HTML** apontando claramente as variáveis degradadas
+- [x] "Dataset de Produção" simulando a passagem do tempo
+- [x] Distribuição alterada em **≥ 2 variáveis importantes**
+- [x] Simulação de **Data Drift** (P(X))
+- [x] Simulação de **Concept Drift** (P(y|X))
+- [x] Predições geradas para o dataset de Produção
+- [x] Comparação Referência × Produção com **Evidently AI**
+- [x] Testes estatísticos (**PSI** e/ou **Kolmogorov-Smirnov**) por feature
+- [x] **Relatório HTML** apontando claramente as variáveis degradadas
 
 ## Etapa 3: Observabilidade e Logs (20%)
 
@@ -53,7 +53,7 @@ O peso entre parênteses é o do critério de avaliação.
 ## Repositório
 
 - [x] Pipeline de validação de dados configurado
-- [ ] Scripts de simulação e detecção de drift
+- [x] Scripts de simulação e detecção de drift
 - [ ] Relatórios HTML gerados e versionados
 - [ ] Governança consolidada no `README.md`
 - [x] Histórico de commits semântico e organizado
