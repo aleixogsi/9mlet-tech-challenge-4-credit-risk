@@ -1,5 +1,12 @@
-# Cenários de drift da Etapa 2: RASCUNHO, a ser refinado em T2.1 com base na
-# feature importance do baseline (T1.9). Cada janela simula um período de produção.
+# Cenários de drift da Etapa 2. Cada janela simula um período de produção, com
+# intensidade crescente de t1 (controle) a t5 (crise).
+#
+# Escolha das features (T2.1), a partir de reports/training/feature_importance.csv:
+#   As três primeiras do ranking (loan_grade, person_home_ownership, loan_intent) são
+#   categóricas e não fazem parte das operações numéricas abaixo. As features numéricas
+#   mais importantes são loan_percent_income (4ª, ~16%) e loan_int_rate (5ª, ~9%):
+#   elas são as que mais sofrem drift. person_income e person_emp_length (6ª e 7ª)
+#   completam a história macroeconômica (inflação e desemprego).
 #
 # Tipos:
 #   data_drift     → altera P(X): a distribuição da feature muda
@@ -10,10 +17,14 @@
 #   shift  → soma `value` à feature
 #   clip   → limita a feature a [min, max]
 #
+# As mudanças são aplicadas na ordem listada. Por isso, o concept drift fica por
+# último: a condição é avaliada sobre as features já alteradas.
+#
 # Toda alteração PRECISA de `rationale` (justificativa econômica), que alimenta a
 # análise causal do README (T4.4).
 
 seed: 42
+window_size: 5000
 
 windows:
   - name: t1
@@ -21,13 +32,18 @@ windows:
     changes: []
 
   - name: t2
-    description: "Início da inflação"
+    description: "Início da inflação: juros começam a subir"
     changes:
       - type: data_drift
         feature: person_income
         op: scale
         factor: 1.10
         rationale: "Reajustes nominais de salário acompanham a inflação; a renda nominal sobe sem ganho real."
+      - type: data_drift
+        feature: loan_int_rate
+        op: shift
+        value: 0.75
+        rationale: "O Banco Central inicia o ciclo de alta da taxa básica para conter a inflação, e o crédito fica mais caro."
 
   - name: t3
     description: "Inflação persistente + alta de juros"
@@ -36,15 +52,20 @@ windows:
         feature: person_income
         op: scale
         factor: 1.20
-        rationale: "Inflação acumulada eleva a renda nominal."
+        rationale: "A inflação acumulada eleva a renda nominal."
       - type: data_drift
         feature: loan_int_rate
         op: shift
         value: 2.5
-        rationale: "Alta da taxa básica de juros encarece o crédito."
+        rationale: "A alta da taxa básica de juros é repassada às taxas dos empréstimos."
+      - type: data_drift
+        feature: loan_percent_income
+        op: shift
+        value: 0.03
+        rationale: "Com a perda de poder de compra, os clientes pedem empréstimos maiores em relação à renda."
 
   - name: t4
-    description: "Desaceleração: desemprego começa a subir"
+    description: "Desaceleração: desemprego sobe e a inadimplência começa a mudar"
     changes:
       - type: data_drift
         feature: person_income
@@ -55,15 +76,26 @@ windows:
         feature: loan_int_rate
         op: shift
         value: 4.0
-        rationale: "Juros seguem subindo."
+        rationale: "Os juros seguem subindo."
+      - type: data_drift
+        feature: loan_percent_income
+        op: shift
+        value: 0.06
+        rationale: "O comprometimento da renda com crédito cresce para manter o consumo."
       - type: data_drift
         feature: person_emp_length
         op: scale
         factor: 0.6
         rationale: "Demissões e recolocações reduzem o tempo médio de emprego."
+      - type: concept_drift
+        target: loan_status
+        condition: "loan_percent_income > 0.25"
+        flip_to: 1
+        fraction: 0.15
+        rationale: "Clientes com parcela alta em relação à renda passam a inadimplir mais, mesmo com o mesmo perfil de cadastro."
 
   - name: t5
-    description: "Crise: concept drift (mesmo perfil, mais inadimplência)"
+    description: "Crise: concept drift forte (mesmo perfil, muito mais inadimplência)"
     changes:
       - type: data_drift
         feature: person_income
@@ -74,7 +106,17 @@ windows:
         feature: loan_int_rate
         op: shift
         value: 5.0
-        rationale: "Juros altos."
+        rationale: "Juros no pico do ciclo de aperto monetário."
+      - type: data_drift
+        feature: loan_percent_income
+        op: shift
+        value: 0.08
+        rationale: "Endividamento elevado: as famílias recorrem ao crédito para cobrir despesas básicas."
+      - type: data_drift
+        feature: person_emp_length
+        op: scale
+        factor: 0.5
+        rationale: "O desemprego alto encurta ainda mais o tempo de emprego."
       - type: concept_drift
         target: loan_status
         condition: "loan_percent_income > 0.25"

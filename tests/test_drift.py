@@ -217,3 +217,35 @@ def test_project_windows_pass_inference_contract() -> None:
 def test_invalid_window_size_is_rejected(size: object) -> None:
     with pytest.raises(ValueError):
         validate_scenarios({**VALID_SCENARIOS, "window_size": size})
+
+
+# --- T2.1: cenários alinhados à feature importance ----------------------------
+
+
+def test_project_scenarios_cover_data_and_concept_drift() -> None:
+    scenarios = load_scenarios(config.DRIFT_SCENARIOS_FILE)
+    types = {c["type"] for w in scenarios["windows"] for c in w.get("changes", [])}
+    assert types == {"data_drift", "concept_drift"}
+    assert scenarios["windows"][0]["changes"] == []
+
+
+def test_project_scenarios_drift_top_numeric_features() -> None:
+    """As ≥ 2 features numéricas mais importantes do baseline sofrem data drift."""
+    importance = pd.read_csv(config.TRAINING_REPORTS_DIR / "feature_importance.csv")
+    numeric = importance[importance["feature"].isin(config.NUMERIC_FEATURES)]
+    top_two = set(numeric["feature"].head(2))
+    scenarios = load_scenarios(config.DRIFT_SCENARIOS_FILE)
+    drifted = {
+        c["feature"]
+        for w in scenarios["windows"]
+        for c in w["changes"]
+        if c["type"] == "data_drift"
+    }
+    assert top_two <= drifted
+    assert len(drifted) >= 2
+
+
+def test_project_scenarios_intensity_grows() -> None:
+    scenarios = load_scenarios(config.DRIFT_SCENARIOS_FILE)
+    counts = [len(w["changes"]) for w in scenarios["windows"]]
+    assert counts == sorted(counts)
