@@ -41,7 +41,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 
 ## 🧭 Etapa 2 · Simulação e detecção de drift · Vini
 
-- [ ] Criar dados sintéticos para testes `T0.5`
+- [x] Criar dados sintéticos para testes `T0.5`
 - [ ] Criar funções de alteração econômica dos dados `T2.2`
 - [ ] Gerar janelas de produção t1–t5 com intensidade crescente `T2.3`
 - [ ] Ajustar a simulação para alterar as features mais importantes `T2.1`
