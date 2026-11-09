@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import copy
 
+import pandas as pd
 import pytest
 import yaml
 
 from credit_risk import config
-from credit_risk.drift.scenarios import apply_data_drift, load_scenarios, validate_scenarios
+from credit_risk.drift.scenarios import (
+    apply_concept_drift,
+    apply_data_drift,
+    build_windows,
+    load_scenarios,
+    validate_scenarios,
+)
 from tests.fixtures.synthetic import make_synthetic_credit_df
 
 VALID_SCENARIOS = {
@@ -126,3 +133,87 @@ def test_data_drift_keeps_other_columns() -> None:
     result = apply_data_drift(frame, {"feature": "person_income", "op": "scale", "factor": 2})
     others = [column for column in frame.columns if column != "person_income"]
     assert result[others].equals(frame[others])
+
+
+# --- T2.3: concept drift e janelas --------------------------------------------
+
+
+def test_concept_drift_changes_only_target() -> None:
+    """Concept drift altera loan_status e mantém as features."""
+    import numpy as np
+
+    frame = make_synthetic_credit_df(n=1_000, seed=6)
+    change = VALID_SCENARIOS["windows"][1]["changes"][1]
+    result = apply_concept_drift(frame, change, np.random.default_rng(0))
+    assert result[config.FEATURES].equals(frame[config.FEATURES])
+    assert result[config.TARGET].sum() > frame[config.TARGET].sum()
+
+
+def test_concept_drift_respects_condition_and_fraction() -> None:
+    import numpy as np
+
+    frame = make_synthetic_credit_df(n=2_000, seed=7)
+    change = VALID_SCENARIOS["windows"][1]["changes"][1]
+    result = apply_concept_drift(frame, change, np.random.default_rng(0))
+    inside = frame.eval(change["condition"])
+    eligible = inside & (frame[config.TARGET] == 0)
+    flipped = result[config.TARGET] != frame[config.TARGET]
+    assert not flipped[~inside].any()
+    assert (result.loc[flipped, config.TARGET] == 1).all()
+    assert flipped.sum() == round(0.5 * eligible.sum())
+
+
+def test_windows_are_reproducible() -> None:
+    """Mesma seed → mesmas janelas."""
+    base = make_synthetic_credit_df(n=800, seed=8)
+    scenarios = {**VALID_SCENARIOS, "window_size": 300}
+    first, second = build_windows(base, scenarios), build_windows(base, scenarios)
+    assert first.keys() == second.keys()
+    for name in first:
+        pd.testing.assert_frame_equal(first[name], second[name])
+
+
+def test_windows_change_with_seed() -> None:
+    base = make_synthetic_credit_df(n=800, seed=9)
+    first = build_windows(base, {**VALID_SCENARIOS, "window_size": 300})
+    other = build_windows(base, {**VALID_SCENARIOS, "window_size": 300, "seed": 8})
+    assert not first["t1"].equals(other["t1"])
+
+
+def test_windows_have_dataset_columns_and_size() -> None:
+    base = make_synthetic_credit_df(n=800, seed=10)
+    windows = build_windows(base, {**VALID_SCENARIOS, "window_size": 300})
+    assert list(windows) == ["t1", "t2"]
+    for frame in windows.values():
+        assert list(frame.columns) == list(base.columns)
+        assert len(frame) == 300
+        assert frame[config.ID_COLUMN].is_unique
+
+
+def test_control_window_keeps_distribution() -> None:
+    base = make_synthetic_credit_df(n=800, seed=11)
+    window = build_windows(base, {**VALID_SCENARIOS, "window_size": 300})["t1"]
+    assert set(window[config.ID_COLUMN]) <= set(base[config.ID_COLUMN])
+    merged = window.merge(base, on=config.ID_COLUMN, suffixes=("", "_base"))
+    assert (merged["person_income"] == merged["person_income_base"]).all()
+
+
+def test_window_size_is_capped_by_base() -> None:
+    base = make_synthetic_credit_df(n=100, seed=12)
+    windows = build_windows(base, {**VALID_SCENARIOS, "window_size": 10_000})
+    assert all(len(frame) == 100 for frame in windows.values())
+
+
+def test_project_windows_pass_inference_contract() -> None:
+    from credit_risk.contracts.schemas import build_inference_schema
+
+    base = make_synthetic_credit_df(n=3_000, seed=13)
+    scenarios = {**load_scenarios(config.DRIFT_SCENARIOS_FILE), "window_size": 1_000}
+    for frame in build_windows(base, scenarios).values():
+        build_inference_schema().validate(frame.drop(columns=[config.TARGET]), lazy=True)
+
+
+@pytest.mark.parametrize("size", [0, -5, 1.5, "100"])
+def test_invalid_window_size_is_rejected(size: object) -> None:
+    with pytest.raises(ValueError):
+        validate_scenarios({**VALID_SCENARIOS, "window_size": size})

@@ -74,6 +74,7 @@ MAX_INCOME = 10_000_000.0
 PSI_WARNING = 0.10  # 0.10–0.25: atenção
 PSI_DRIFT = 0.25  # > 0.25: drift
 KS_PVALUE = 0.05  # p-valor < 0.05: distribuições diferentes
+DRIFT_WINDOW_SIZE = 5_000  # linhas por janela de produção simulada (t1..tN)
 
 # --- Health / alert thresholds (Etapa 3) -------------------------------------
 APPROVAL_THRESHOLD = 0.5  # score de default acima disso → crédito negado

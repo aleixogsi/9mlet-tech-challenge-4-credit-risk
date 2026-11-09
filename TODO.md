@@ -43,7 +43,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 
 - [x] Criar dados sintéticos para testes `T0.5`
 - [x] Criar funções de alteração econômica dos dados `T2.2`
-- [ ] Gerar janelas de produção t1–t5 com intensidade crescente `T2.3`
+- [x] Gerar janelas de produção t1–t5 com intensidade crescente `T2.3`
 - [ ] Ajustar a simulação para alterar as features mais importantes `T2.1`
 - [ ] Gerar predições das janelas simuladas `T2.4`
 - [ ] Gerar relatórios Evidently com PSI e KS `T2.6`

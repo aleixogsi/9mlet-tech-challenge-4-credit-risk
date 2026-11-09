@@ -33,6 +33,11 @@ def validate_scenarios(scenarios: Any) -> None:
         raise ValueError("O arquivo de cenários deve ser um mapeamento YAML")
     if not isinstance(scenarios.get("seed"), int):
         raise ValueError("Cenários: 'seed' inteira é obrigatória")
+    window_size = scenarios.get("window_size")
+    if window_size is not None and (
+        not isinstance(window_size, int) or isinstance(window_size, bool) or window_size < 1
+    ):
+        raise ValueError("Cenários: 'window_size' deve ser um inteiro positivo")
     windows = scenarios.get("windows")
     if not isinstance(windows, list) or not windows:
         raise ValueError("Cenários: 'windows' deve ser uma lista não vazia")
@@ -121,9 +126,20 @@ def apply_concept_drift(
 ) -> pd.DataFrame:
     """Altera P(y|X): muda o target de uma fração das linhas que atendem a `condition`.
 
-    TODO(T2.3)
+    Só são elegíveis as linhas que atendem à condição e cujo target ainda é diferente de
+    `flip_to`. Desse grupo, `round(fraction * elegíveis)` linhas são sorteadas com `rng` e
+    recebem `flip_to`. As features não mudam: o mesmo perfil passa a ter outro risco.
     """
-    raise NotImplementedError("T2.3")
+    target = change["target"]
+    flip_to = int(change["flip_to"])
+    condition_mask = df.eval(change["condition"]).to_numpy(dtype=bool)
+    eligible = df.index[condition_mask & (df[target] != flip_to).to_numpy()]
+    n_flip = round(float(change["fraction"]) * len(eligible))
+    result = df.copy()
+    if n_flip:
+        chosen = rng.choice(eligible, size=n_flip, replace=False)
+        result.loc[chosen, target] = flip_to
+    return result
 
 
 def build_windows(
@@ -131,6 +147,28 @@ def build_windows(
 ) -> dict[str, pd.DataFrame]:
     """Gera {nome_da_janela: DataFrame} aplicando as mudanças de cada janela, com seed fixa.
 
-    TODO(T2.3): cada janela amostra da base de produção e aplica as mudanças.
+    Cada janela amostra, sem reposição, `window_size` linhas da base de produção
+    (padrão `config.DRIFT_WINDOW_SIZE`) e aplica as mudanças na ordem do YAML. A janela i
+    usa o gerador `default_rng([seed, i])`, então as janelas são reprodutíveis e
+    independentes entre si.
     """
-    raise NotImplementedError("T2.3")
+    import numpy as np
+
+    from credit_risk import config
+
+    validate_scenarios(scenarios)
+    seed = scenarios["seed"]
+    window_size = min(
+        int(scenarios.get("window_size", config.DRIFT_WINDOW_SIZE)), len(production_base)
+    )
+    windows: dict[str, pd.DataFrame] = {}
+    for index, window in enumerate(scenarios["windows"]):
+        rng = np.random.default_rng([seed, index])
+        frame = production_base.sample(n=window_size, random_state=rng).reset_index(drop=True)
+        for change in window.get("changes", []):
+            if change["type"] == "data_drift":
+                frame = apply_data_drift(frame, change)
+            else:
+                frame = apply_concept_drift(frame, change, rng)
+        windows[window["name"]] = frame
+    return windows
