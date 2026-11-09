@@ -1,4 +1,4 @@
-"""Testes de simulação e detecção de drift (Etapa 2)."""
+"""Testes unitários de simulação e detecção de drift (Etapa 2: T2.1–T2.7)."""
 
 from __future__ import annotations
 
