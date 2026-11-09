@@ -1,0 +1,12 @@
+feature,psi,ks_pvalue,status,drift_detected
+person_age,0.0053053914293296,0.6488619218281306,stable,False
+person_income,0.04473166365221855,3.2345022189186102e-80,stable,True
+person_emp_length,0.013700166838080279,0.9999877412519813,stable,False
+loan_amnt,0.0035142322587680772,0.8833471202026999,stable,False
+loan_int_rate,1.9799173644061707,2.24686556e-315,drift,True
+loan_percent_income,0.20067535555234492,6.419713010917361e-60,warning,True
+cb_person_cred_hist_length,0.004036740523550023,0.9986718325435127,stable,False
+person_home_ownership,0.0014415807748600579,,stable,False
+loan_intent,0.001385188217919419,,stable,False
+loan_grade,0.0020547389677769436,,stable,False
+cb_person_default_on_file,0.0015752969655104484,,stable,False

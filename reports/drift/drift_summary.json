@@ -1,0 +1,486 @@
+{
+  "generated_at": "2026-11-09T00:35:20.165682Z",
+  "reference_rows": 17180,
+  "windows": [
+    {
+      "window": "t1",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 2,
+      "share_drifted": 0.1818,
+      "features": [
+        {
+          "feature": "person_age",
+          "psi": 0.008428279470577477,
+          "ks_pvalue": 0.03614321513103924,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_income",
+          "psi": 0.006056434434688016,
+          "ks_pvalue": 0.7411552956659351,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.016603655334327047,
+          "ks_pvalue": 0.034722919896109095,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_amnt",
+          "psi": 0.003275486085921516,
+          "ks_pvalue": 0.11687234196335672,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 0.0038621791659306285,
+          "ks_pvalue": 0.5327227050099068,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 0.003251282770112692,
+          "ks_pvalue": 0.0726347328468272,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_cred_hist_length",
+          "psi": 0.003907010110134451,
+          "ks_pvalue": 0.7069783701252634,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_home_ownership",
+          "psi": 0.0006492083641552617,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_intent",
+          "psi": 0.0026132338908949893,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_grade",
+          "psi": 0.0013051994736128078,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_default_on_file",
+          "psi": 0.0008666275526017118,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.003807416796848367,
+        "mean_score_ref": 0.21650555729866028,
+        "mean_score_cur": 0.21443191170692444
+      },
+      "performance": {
+        "auc": 0.9240908798578101,
+        "ks": 0.7112482786178589
+      },
+      "report_html": "reports/drift/drift_t1.html"
+    },
+    {
+      "window": "t2",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 2,
+      "share_drifted": 0.1818,
+      "features": [
+        {
+          "feature": "person_age",
+          "psi": 0.005643037266552299,
+          "ks_pvalue": 0.27719509789899177,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_income",
+          "psi": 0.022723866394736125,
+          "ks_pvalue": 5.238258199097252e-27,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.013773027746426355,
+          "ks_pvalue": 0.8446891591004946,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_amnt",
+          "psi": 0.004145852234952837,
+          "ks_pvalue": 0.282647519866166,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 0.18888883713534274,
+          "ks_pvalue": 5.902604194919604e-65,
+          "status": "warning",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 0.003661433767585781,
+          "ks_pvalue": 0.18699066613319115,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_cred_hist_length",
+          "psi": 0.0022442776642779575,
+          "ks_pvalue": 0.47856142855589334,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_home_ownership",
+          "psi": 0.00020686477453494444,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_intent",
+          "psi": 0.001294976070666018,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_grade",
+          "psi": 0.0013731781667472465,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_default_on_file",
+          "psi": 0.000694144534133636,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.021912225781185114,
+        "mean_score_ref": 0.21650555729866028,
+        "mean_score_cur": 0.2243073433637619
+      },
+      "performance": {
+        "auc": 0.9142186569777215,
+        "ks": 0.6912586688995361
+      },
+      "report_html": "reports/drift/drift_t2.html"
+    },
+    {
+      "window": "t3",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 3,
+      "share_drifted": 0.2727,
+      "features": [
+        {
+          "feature": "person_age",
+          "psi": 0.0053053914293296,
+          "ks_pvalue": 0.6488619218281306,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_income",
+          "psi": 0.04473166365221855,
+          "ks_pvalue": 3.2345022189186102e-80,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.013700166838080279,
+          "ks_pvalue": 0.9999877412519813,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_amnt",
+          "psi": 0.0035142322587680772,
+          "ks_pvalue": 0.8833471202026999,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 1.9799173644061707,
+          "ks_pvalue": 2.24686556e-315,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 0.20067535555234492,
+          "ks_pvalue": 6.419713010917361e-60,
+          "status": "warning",
+          "drift_detected": true
+        },
+        {
+          "feature": "cb_person_cred_hist_length",
+          "psi": 0.004036740523550023,
+          "ks_pvalue": 0.9986718325435127,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_home_ownership",
+          "psi": 0.0014415807748600579,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_intent",
+          "psi": 0.001385188217919419,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_grade",
+          "psi": 0.0020547389677769436,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_default_on_file",
+          "psi": 0.0015752969655104484,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.22429671415930674,
+        "mean_score_ref": 0.21650555729866028,
+        "mean_score_cur": 0.2880508005619049
+      },
+      "performance": {
+        "auc": 0.890889904178696,
+        "ks": 0.6472843885421753
+      },
+      "report_html": "reports/drift/drift_t3.html"
+    },
+    {
+      "window": "t4",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 4,
+      "share_drifted": 0.3636,
+      "features": [
+        {
+          "feature": "person_age",
+          "psi": 0.005196238323356068,
+          "ks_pvalue": 0.4077220905650025,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_income",
+          "psi": 0.0644725003765894,
+          "ks_pvalue": 1.1304114057186012e-119,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.2793545491317707,
+          "ks_pvalue": 6.55056594003183e-306,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_amnt",
+          "psi": 0.00474420554328151,
+          "ks_pvalue": 0.4570426912352954,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 2.8967477165094477,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 1.0640523402055664,
+          "ks_pvalue": 8.009078712770687e-250,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "cb_person_cred_hist_length",
+          "psi": 0.004753133123460889,
+          "ks_pvalue": 0.4077220905650025,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_home_ownership",
+          "psi": 0.0001620938444600944,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_intent",
+          "psi": 0.0011100266149149897,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_grade",
+          "psi": 0.002375821259436203,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_default_on_file",
+          "psi": 0.0007495614352687757,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.6249389975739603,
+        "mean_score_ref": 0.21650555729866028,
+        "mean_score_cur": 0.390414834022522
+      },
+      "performance": {
+        "auc": 0.8420680682965667,
+        "ks": 0.5671680569648743
+      },
+      "report_html": "reports/drift/drift_t4.html"
+    },
+    {
+      "window": "t5",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 4,
+      "share_drifted": 0.3636,
+      "features": [
+        {
+          "feature": "person_age",
+          "psi": 0.005120859371923978,
+          "ks_pvalue": 0.9195816585596838,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_income",
+          "psi": 0.06817870801075995,
+          "ks_pvalue": 1.7549370816647202e-157,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.5498155615649862,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_amnt",
+          "psi": 0.002435746154569672,
+          "ks_pvalue": 0.2947562387266206,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 3.882509643767917,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 1.5112140581391502,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "cb_person_cred_hist_length",
+          "psi": 0.0028566619748721877,
+          "ks_pvalue": 0.9195816585596838,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "person_home_ownership",
+          "psi": 0.0008168617939314214,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_intent",
+          "psi": 0.0017601809722780739,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_grade",
+          "psi": 0.0013731340079770227,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "cb_person_default_on_file",
+          "psi": 0.00019322005822754363,
+          "ks_pvalue": null,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.8300339078397592,
+        "mean_score_ref": 0.21650555729866028,
+        "mean_score_cur": 0.4436805248260498
+      },
+      "performance": {
+        "auc": 0.8010640194132262,
+        "ks": 0.47990238666534424
+      },
+      "report_html": "reports/drift/drift_t5.html"
+    }
+  ]
+}
