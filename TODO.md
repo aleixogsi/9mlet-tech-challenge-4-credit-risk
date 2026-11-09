@@ -46,7 +46,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 - [x] Gerar janelas de produção t1–t5 com intensidade crescente `T2.3`
 - [x] Ajustar a simulação para alterar as features mais importantes `T2.1`
 - [x] Gerar predições das janelas simuladas `T2.4`
-- [ ] Gerar relatórios Evidently com PSI e KS `T2.6`
+- [x] Gerar relatórios Evidently com PSI e KS `T2.6`
 - [ ] Escrever os testes da simulação e detecção `T2.7`
 
 ## 🧭 Etapa 3 · Observabilidade e monitoramento · Fernando

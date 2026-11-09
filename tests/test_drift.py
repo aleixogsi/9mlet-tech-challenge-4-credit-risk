@@ -9,6 +9,12 @@ import pytest
 import yaml
 
 from credit_risk import config
+from credit_risk.drift.reports import (
+    build_drift_report,
+    build_performance_report,
+    drift_table,
+    psi_status,
+)
 from credit_risk.drift.scenarios import (
     apply_concept_drift,
     apply_data_drift,
@@ -249,3 +255,87 @@ def test_project_scenarios_intensity_grows() -> None:
     scenarios = load_scenarios(config.DRIFT_SCENARIOS_FILE)
     counts = [len(w["changes"]) for w in scenarios["windows"]]
     assert counts == sorted(counts)
+
+
+# --- T2.6: detecção com Evidently (PSI e KS) ----------------------------------
+
+
+@pytest.fixture(scope="module")
+def reference_frame() -> pd.DataFrame:
+    return make_synthetic_credit_df(n=2_000, seed=30, with_score=True)
+
+
+@pytest.mark.parametrize(
+    ("psi", "status"),
+    [(0.0, "stable"), (config.PSI_WARNING, "warning"), (0.2, "warning"), (0.3, "drift")],
+)
+def test_psi_status_thresholds(psi: float, status: str) -> None:
+    assert psi_status(psi) == status
+
+
+def test_identical_data_has_no_drift(reference_frame, tmp_path) -> None:
+    """Referência × ela mesma → nenhuma feature com status 'drift'."""
+    metrics = build_drift_report(reference_frame, reference_frame, tmp_path / "same.html")
+    table = drift_table(metrics)
+    assert list(table["feature"]) == config.FEATURES
+    assert (table["status"] == "stable").all()
+    assert not table["drift_detected"].any()
+    assert metrics["prediction_drift"]["psi"] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_shifted_feature_is_flagged(reference_frame, tmp_path) -> None:
+    """Feature fortemente deslocada → status 'drift' na drift_table (PSI e KS)."""
+    current = reference_frame.copy()
+    current["loan_int_rate"] = current["loan_int_rate"] + 5
+    table = drift_table(build_drift_report(reference_frame, current, tmp_path / "d.html"))
+    row = table.set_index("feature").loc["loan_int_rate"]
+    assert row["status"] == "drift"
+    assert row["psi"] > config.PSI_DRIFT
+    assert row["ks_pvalue"] < config.KS_PVALUE
+    assert bool(row["drift_detected"])
+    assert table.set_index("feature").loc["person_age", "status"] == "stable"
+
+
+def test_categorical_features_have_no_ks(reference_frame, tmp_path) -> None:
+    table = drift_table(build_drift_report(reference_frame, reference_frame, tmp_path / "c.html"))
+    categorical = table[table["feature"].isin(config.CATEGORICAL_FEATURES)]
+    numeric = table[table["feature"].isin(config.NUMERIC_FEATURES)]
+    assert categorical["ks_pvalue"].isna().all()
+    assert numeric["ks_pvalue"].notna().all()
+
+
+def test_drift_report_writes_html(reference_frame, tmp_path) -> None:
+    output = tmp_path / "nested" / "drift.html"
+    build_drift_report(reference_frame, reference_frame, output)
+    assert output.exists()
+    assert "<html" in output.read_text(encoding="utf-8")[:2_000].lower()
+
+
+def test_drift_report_without_score_has_no_prediction_drift(reference_frame, tmp_path) -> None:
+    frame = reference_frame.drop(columns=["score"])
+    assert build_drift_report(frame, frame, tmp_path / "n.html")["prediction_drift"] is None
+
+
+def test_prediction_drift_follows_score_shift(reference_frame, tmp_path) -> None:
+    current = reference_frame.copy()
+    current["score"] = (current["score"] + 0.3).clip(upper=1.0)
+    prediction = build_drift_report(reference_frame, current, tmp_path / "p.html")[
+        "prediction_drift"
+    ]
+    assert prediction["psi"] > config.PSI_DRIFT
+    assert prediction["mean_score_cur"] > prediction["mean_score_ref"]
+
+
+def test_performance_report_drops_with_concept_drift(reference_frame, tmp_path) -> None:
+    import numpy as np
+
+    stable = build_performance_report(reference_frame, reference_frame, tmp_path / "s.html")
+    current = reference_frame.copy()
+    rng = np.random.default_rng(0)
+    flip = rng.random(len(current)) < 0.3
+    current.loc[flip, config.TARGET] = 1 - current.loc[flip, config.TARGET]
+    drifted = build_performance_report(reference_frame, current, tmp_path / "c.html")
+    assert (tmp_path / "c.html").exists()
+    assert stable["auc"] == pytest.approx(stable["auc_reference"], abs=1e-6)
+    assert drifted["auc"] < stable["auc"] - 0.1
+    assert drifted["ks"] < stable["ks"]
