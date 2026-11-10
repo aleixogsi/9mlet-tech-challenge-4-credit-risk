@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Observabilidade e Monitoramento — Credit Risk</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --ok-bg: #f0fdf4;
+      --ok-text: #166534;
+      --warn-bg: #fefce8;
+      --warn-text: #854d0e;
+      --crit-bg: #fef2f2;
+      --crit-text: #991b1b;
+      --accent: #1d4ed8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { margin: 0 0 0.25rem 0; font-size: 1.6rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .kpi-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .kpi-value { font-size: 1.75rem; margin: 0.25rem 0; }
+    .kpi-sub { font-size: 0.8rem; color: var(--muted); }
+    section.panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.75rem;
+      overflow-x: auto;
+    }
+    section.panel h2 { margin-top: 0; font-size: 1.2rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+    td.col-features { font-family: monospace; font-size: 0.82rem; max-width: 260px; }
+    td.cell-ok { background: var(--ok-bg); color: var(--ok-text); }
+    td.cell-warning { background: var(--warn-bg); color: var(--warn-text); font-weight: 600; }
+    td.cell-critical { background: var(--crit-bg); color: var(--crit-text); font-weight: 700; }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-warning {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border: 1px solid #fde047;
+    }
+    .badge-critical {
+      background: var(--crit-bg);
+      color: var(--crit-text);
+      border: 1px solid #fca5a5;
+    }
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .links-box h3 { margin-top: 0; font-size: 1rem; }
+    .links-box ul { margin: 0; padding-left: 1.2rem; }
+    .links-box li { margin-bottom: 0.45rem; font-size: 0.9rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>
+      Painel de Observabilidade e Monitoramento — Credit Risk
+      (<code>baseline_v1</code>)
+    </h1>
+    <p>
+      Saúde operacional do pipeline, detecção de Data/Prediction/Concept Drift
+      e alertas de degradação · Gerado em 2026-11-10 01:18:02 UTC
+    </p>
+  </header>
+
+  
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Janelas Monitoradas</span>
+        <strong class="kpi-value">5</strong>
+        <span class="kpi-sub">25,000 predições auditadas</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Alertas Disparados</span>
+        <strong class="kpi-value">8</strong>
+        <span class="kpi-sub">6 críticos · 2 atenção</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Pico de Data Drift</span>
+        <strong class="kpi-value">36.4%</strong>
+        <span class="kpi-sub">Limiar de alerta: 30%</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Menor AUC Observada</span>
+        <strong class="kpi-value">0.801</strong>
+        <span class="kpi-sub">Tolerância de queda: -0.05</span>
+      </div>
+    </section>
+    
+
+  <section class="panel" id="health-metrics">
+    <h2>1. Métricas de Saúde por Janela</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Janela</th>
+          <th>Volume</th>
+          <th>% Nulas/Erro</th>
+          <th>% Lotes Bloq.</th>
+          <th>Latência p50</th>
+          <th>Latência p95</th>
+          <th>Score Médio</th>
+          <th>Taxa Aprovação</th>
+          <th>PSI Score</th>
+          <th>Features c/ Drift</th>
+          <th>Quais Features</th>
+          <th>AUC (Queda)</th>
+          <th>KS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>t1</strong></td><td>5,000</td><td class="cell-ok">0.00%</td><td class="cell-ok">0.0%</td><td>4.48 ms</td><td class="cell-ok">4.96 ms</td><td>0.214</td><td>84.1%</td><td class="cell-ok">0.004</td><td class="cell-ok">2/11 (18%)</td><td class="col-features">person_age, person_emp_length</td><td class="cell-ok">0.924 (-0.017)</td><td>0.711</td></tr>
+<tr><td><strong>t2</strong></td><td>5,000</td><td class="cell-ok">0.00%</td><td class="cell-ok">0.0%</td><td>4.38 ms</td><td class="cell-ok">4.82 ms</td><td>0.224</td><td>84.2%</td><td class="cell-ok">0.022</td><td class="cell-ok">2/11 (18%)</td><td class="col-features">person_income, loan_int_rate</td><td class="cell-ok">0.914 (-0.027)</td><td>0.691</td></tr>
+<tr><td><strong>t3</strong></td><td>5,000</td><td class="cell-ok">0.00%</td><td class="cell-ok">0.0%</td><td>4.43 ms</td><td class="cell-ok">4.72 ms</td><td>0.282</td><td>79.8%</td><td class="cell-warning">0.224</td><td class="cell-ok">3/11 (27%)</td><td class="col-features">person_income, loan_int_rate, loan_percent_income</td><td class="cell-ok">0.891 (-0.050)</td><td>0.647</td></tr>
+<tr><td><strong>t4</strong></td><td>5,000</td><td class="cell-ok">0.00%</td><td class="cell-ok">0.0%</td><td>4.38 ms</td><td class="cell-ok">4.75 ms</td><td>0.378</td><td>68.1%</td><td class="cell-critical">0.625</td><td class="cell-critical">4/11 (36%)</td><td class="col-features">person_income, person_emp_length, loan_int_rate, loan_percent_income</td><td class="cell-warning">0.842 (-0.099)</td><td>0.567</td></tr>
+<tr><td><strong>t5</strong></td><td>5,000</td><td class="cell-ok">0.00%</td><td class="cell-ok">0.0%</td><td>4.46 ms</td><td class="cell-ok">5.10 ms</td><td>0.429</td><td>61.0%</td><td class="cell-critical">0.830</td><td class="cell-critical">4/11 (36%)</td><td class="col-features">person_income, person_emp_length, loan_int_rate, loan_percent_income</td><td class="cell-critical">0.801 (-0.140)</td><td>0.480</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel" id="degradation-alerts">
+    <h2>2. Alertas de Degradação e Qualidade</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Janela / Lote</th>
+          <th>Severidade</th>
+          <th>Tipo</th>
+          <th>Métrica</th>
+          <th>Valor</th>
+          <th>Threshold</th>
+          <th>Mensagem</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>bad_batch</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>contract_blocked</code></td><td><code>blocked_batches_pct</code></td><td>1.0000</td><td>0.0000</td><td>Lote &#x27;bad_batch&#x27; bloqueado pelo contrato de dados (8 violações) [field_uniqueness, in_range(18, 100), isin([&#x27;PERSONAL&#x27;, &#x27;EDUCATION&#x27;, &#x27;MEDICAL&#x27;, &#x27;VENTURE&#x27;, &#x27;HOMEIMPROVEMENT&#x27;, &#x27;DEBTCONSOLIDATION&#x27;]), isin([0, 1]), no_duplicate_rows, not_nullable]</td></tr>
+<tr><td><strong>t3</strong></td><td><span class="badge badge-warning">WARNING</span></td><td><code>prediction_drift</code></td><td><code>prediction_psi</code></td><td>0.2243</td><td>0.1000</td><td>PSI do score (0.224) em faixa de atenção (&gt;= 0.10) na janela t3</td></tr>
+<tr><td><strong>t4</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>data_drift</code></td><td><code>share_drifted</code></td><td>0.3636</td><td>0.3000</td><td>36% das features com drift na janela t4 (person_income, person_emp_length, loan_int_rate, loan_percent_income)</td></tr>
+<tr><td><strong>t4</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>prediction_drift</code></td><td><code>prediction_psi</code></td><td>0.6249</td><td>0.2500</td><td>PSI do score (0.625) acima do limite crítico (0.25) na janela t4</td></tr>
+<tr><td><strong>t4</strong></td><td><span class="badge badge-warning">WARNING</span></td><td><code>performance_drop</code></td><td><code>auc_drop</code></td><td>0.0987</td><td>0.0500</td><td>Queda de AUC de 0.099 (AUC=0.842) acima do limite (0.05) na janela t4</td></tr>
+<tr><td><strong>t5</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>data_drift</code></td><td><code>share_drifted</code></td><td>0.3636</td><td>0.3000</td><td>36% das features com drift na janela t5 (person_income, person_emp_length, loan_int_rate, loan_percent_income)</td></tr>
+<tr><td><strong>t5</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>prediction_drift</code></td><td><code>prediction_psi</code></td><td>0.8300</td><td>0.2500</td><td>PSI do score (0.830) acima do limite crítico (0.25) na janela t5</td></tr>
+<tr><td><strong>t5</strong></td><td><span class="badge badge-critical">CRITICAL</span></td><td><code>performance_drop</code></td><td><code>auc_drop</code></td><td>0.1398</td><td>0.0500</td><td>Queda de AUC de 0.140 (AUC=0.801) acima do limite (0.05) na janela t5</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel" id="evidence-links">
+    <h2>3. Relatórios Evidently e Evidências de Auditoria</h2>
+    
+    <div class="links-grid">
+      <div class="links-box">
+        <h3>Relatórios Evidently por Janela (Etapa 2)</h3>
+        <ul>
+          <li><strong>Janela t1:</strong> <a href="../drift/drift_t1.html">Relatório Data &amp; Prediction Drift (HTML)</a> · <a href="../drift/performance_t1.html">Relatório Performance / Concept Drift (HTML)</a> · <a href="../drift/psi_ks_t1.csv">Tabela PSI &amp; KS (CSV)</a></li>
+<li><strong>Janela t2:</strong> <a href="../drift/drift_t2.html">Relatório Data &amp; Prediction Drift (HTML)</a> · <a href="../drift/performance_t2.html">Relatório Performance / Concept Drift (HTML)</a> · <a href="../drift/psi_ks_t2.csv">Tabela PSI &amp; KS (CSV)</a></li>
+<li><strong>Janela t3:</strong> <a href="../drift/drift_t3.html">Relatório Data &amp; Prediction Drift (HTML)</a> · <a href="../drift/performance_t3.html">Relatório Performance / Concept Drift (HTML)</a> · <a href="../drift/psi_ks_t3.csv">Tabela PSI &amp; KS (CSV)</a></li>
+<li><strong>Janela t4:</strong> <a href="../drift/drift_t4.html">Relatório Data &amp; Prediction Drift (HTML)</a> · <a href="../drift/performance_t4.html">Relatório Performance / Concept Drift (HTML)</a> · <a href="../drift/psi_ks_t4.csv">Tabela PSI &amp; KS (CSV)</a></li>
+<li><strong>Janela t5:</strong> <a href="../drift/drift_t5.html">Relatório Data &amp; Prediction Drift (HTML)</a> · <a href="../drift/performance_t5.html">Relatório Performance / Concept Drift (HTML)</a> · <a href="../drift/psi_ks_t5.csv">Tabela PSI &amp; KS (CSV)</a></li>
+          <li>
+            <strong>Consolidado:</strong>
+            <a href="../drift/drift_summary.json">drift_summary.json</a>
+          </li>
+        </ul>
+      </div>
+      <div class="links-box">
+        <h3>Contratos de Dados e Baseline (Etapa 1)</h3>
+        <ul>
+          <li>
+            <a href="../validation/bad_batch_failures.csv">
+              Evidência de Lote Bloqueado (bad_batch_failures.csv)
+            </a>
+          </li>
+          <li>
+            <a href="../training/metrics.json">Métricas do Modelo Baseline (metrics.json)</a>
+          </li>
+          <li>
+            <a href="../training/feature_importance.csv">
+              Importância das Features (feature_importance.csv)
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+  </section>
+</body>
+</html>

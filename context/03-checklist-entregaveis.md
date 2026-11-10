@@ -27,11 +27,11 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Etapa 3: Observabilidade e Logs (20%)
 
-- [ ] Logs de predição centralizados
-- [ ] Resultados dos testes de drift centralizados
-- [ ] Dashboard (Grafana + Prometheus) **ou** suíte de relatórios automatizados do Evidently
-- [ ] Métricas de saúde documentadas (% predições nulas, latência, volume, nº de alertas de drift)
-- [ ] Alertas de degradação visíveis no dashboard/relatório
+- [x] Logs de predição centralizados
+- [x] Resultados dos testes de drift centralizados
+- [x] Dashboard (Grafana + Prometheus) **ou** suíte de relatórios automatizados do Evidently
+- [x] Métricas de saúde documentadas (% predições nulas, latência, volume, nº de alertas de drift)
+- [x] Alertas de degradação visíveis no dashboard/relatório
 
 ## Etapa 4: Governança LGPD (15%), no `README.md`
 
@@ -54,6 +54,6 @@ O peso entre parênteses é o do critério de avaliação.
 
 - [x] Pipeline de validação de dados configurado
 - [x] Scripts de simulação e detecção de drift
-- [ ] Relatórios HTML gerados e versionados
+- [x] Relatórios HTML gerados e versionados
 - [ ] Governança consolidada no `README.md`
 - [x] Histórico de commits semântico e organizado
