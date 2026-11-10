@@ -24,8 +24,8 @@ silenciosa**. Este projeto constrói a camada que:
 | Modelo | scikit-learn + XGBoost |
 | Data contracts | Pandera |
 | Drift e relatórios | Evidently AI (testes PSI e KS) |
-| Monitoramento | Relatórios Evidently + painel HTML |
-| Ambiente | uv + pyproject.toml |
+| Monitoramento | Painel HTML + Servidor HTTP + Prometheus + Grafana (Docker) |
+| Ambiente | uv + pyproject.toml + Docker Compose |
 
 ## Como rodar
 
@@ -272,24 +272,38 @@ O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/moni
 
 ### Servidor de Observabilidade, Docker, Prometheus e Grafana (`T3.7`)
 
-Além de gerar os arquivos estáticos em `reports/monitoring/`, o projeto inclui um **Servidor HTTP Unificado** (`src/credit_risk/monitoring/server.py`), um `Dockerfile` e um `docker-compose.yml` com provisioning automático do Prometheus e do Grafana:
+> 📖 **Guia didático completo da Etapa 3:** consulte [docs/etapa-3-observabilidade.md](docs/etapa-3-observabilidade.md) para uma explicação simplificada e passo a passo de toda a arquitetura de observabilidade construída.
 
-- **`http://localhost:8000/`**: Painel HTML consolidado (`reports/monitoring/index.html`) e navegação interativa para todos os relatórios do Evidently (`drift_t1..t5.html` e `performance_t1..t5.html`);
-- **`http://localhost:8000/metrics`**: Endpoint OpenMetrics/Prometheus com os gauges `credit_risk_*`;
-- **`http://localhost:8000/api/health` e `/api/alerts`**: Endpoints JSON com o estado de saúde e alertas;
-- **`http://localhost:9090/`**: Interface do Prometheus coletando o serviço `monitor:8000`;
-- **`http://localhost:3000/`**: Grafana com datasource Prometheus e dashboard **Credit Risk — Observabilidade, Drift e Saúde** já carregados automaticamente como página inicial (acesso direto sem login ou `admin`/`admin`).
+Além de gerar os arquivos estáticos em `reports/monitoring/`, o projeto inclui um **Servidor HTTP Unificado** (`src/credit_risk/monitoring/server.py`), um `Dockerfile` e um `docker-compose.yml` que sobem 3 serviços integrados (`monitor`, `prometheus` e `grafana`) com provisioning automático:
 
-Para subir toda a stack via Docker Compose:
+| Serviço / Rota | URL | O que entrega |
+|---|---|---|
+| **Painel Principal (`monitor`)** | `http://localhost:8000/` | Redireciona para `/monitoring/index.html` com KPIs, tabela de saúde, alertas e links |
+| **Relatórios Evidently (`monitor`)** | `http://localhost:8000/drift/drift_t1.html` | Serve todos os HTMLs e CSVs de `reports/` (`drift_t1..t5.html`, `performance_t1..t5.html`, `bad_batch_failures.csv`) |
+| **API JSON de Saúde (`monitor`)** | `http://localhost:8000/api/health` | JSON com todas as métricas operacionais, de drift e de performance das janelas `t1`..`t5` |
+| **API JSON de Alertas (`monitor`)** | `http://localhost:8000/api/alerts` | JSON com todos os alertas disparados (`critical` e `warning`) |
+| **Exporter Prometheus (`monitor`)** | `http://localhost:8000/metrics` | Gauges `credit_risk_*` no padrão OpenMetrics coletados pelo Prometheus |
+| **Prometheus UI (`prometheus`)** | `http://localhost:9090/` | Interface de consulta PromQL conectada automaticamente ao container `monitor:8000` |
+| **Grafana (`grafana`)** | `http://localhost:3000/` | Abre direto no dashboard **Credit Risk — Observabilidade, Drift e Saúde** pré-carregado (acesso anônimo habilitado ou login `admin`/`admin`) |
+
+#### Como rodar com Docker Compose (Monitor + Prometheus + Grafana)
 
 ```bash
+# Subir toda a stack em background
 docker compose up --build -d
+
+# Verificar status e logs dos containers
+docker compose ps
+docker compose logs -f monitor
+
+# Encerrar a stack
+docker compose down
 ```
 
-Ou para iniciar apenas o servidor HTTP localmente sem Docker:
+#### Como rodar apenas o servidor HTTP localmente (sem Docker)
 
 ```bash
-uv run python scripts/monitor.py --serve --port 8000
+uv run python scripts/monitor.py --serve --host 0.0.0.0 --port 8000
 ```
 
 ## Etapa 4: Governança e LGPD

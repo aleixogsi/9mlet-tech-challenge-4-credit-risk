@@ -9,6 +9,12 @@ from credit_risk.contracts.schemas import build_training_schema
 from credit_risk.contracts.validator import DataContractError, validate_or_block
 
 
+@pytest.fixture(autouse=True)
+def _isolate_validation_log(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(config, "LOGS_DIR", tmp_path)
+    monkeypatch.setattr(config, "VALIDATION_LOG", tmp_path / "validation.jsonl")
+
+
 def valid_frame(rows: int = 8) -> pd.DataFrame:
     return pd.DataFrame(
         {
