@@ -1,0 +1,61 @@
+{
+  "title": "Credit Risk — Observabilidade, Drift e Saúde",
+  "uid": "credit-risk-phase4",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Share de Features com Drift por Janela",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "credit_risk_share_drifted",
+          "legendFormat": "{{window}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "ROC AUC e Queda de Performance por Janela",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "credit_risk_auc",
+          "legendFormat": "AUC {{window}}"
+        },
+        {
+          "expr": "credit_risk_auc_drop",
+          "legendFormat": "Drop {{window}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Prediction Drift (PSI do Score)",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "credit_risk_prediction_psi",
+          "legendFormat": "{{window}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Alertas Disparados por Janela e Severidade",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "credit_risk_alerts_total",
+          "legendFormat": "{{window}} - {{type}} ({{severity}})"
+        }
+      ]
+    }
+  ]
+}

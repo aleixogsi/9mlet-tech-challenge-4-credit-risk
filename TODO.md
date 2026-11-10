@@ -59,7 +59,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 - [x] Fazer o painel ler os arquivos reais `T3.5`
 - [x] Documentar as métricas de saúde no README `T3.6`
 - [ ] Gerar e versionar os relatórios e logs finais `T3.8`
-- [ ] Implementar o extra Grafana + Prometheus, se adotado `T3.7`
+- [x] Implementar o extra Grafana + Prometheus, se adotado `T3.7`
 
 ## 🧭 Etapa 4 · Governança, documentação e entrega · Vitor
 

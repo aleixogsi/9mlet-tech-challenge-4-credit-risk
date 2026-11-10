@@ -25,6 +25,10 @@ from credit_risk.monitoring.health import (
     read_validation_log,
 )
 from credit_risk.monitoring.prediction_logger import log_predictions, read_predictions
+from credit_risk.monitoring.prometheus_exporter import (
+    render_prometheus_metrics,
+    write_prometheus_metrics,
+)
 
 MOCKS_DIR = Path(__file__).parent / "fixtures" / "mocks"
 VALIDATION_FIELDS = ("timestamp", "batch_name", "rows", "status", "n_failures", "failed_rules")
@@ -238,6 +242,7 @@ def test_monitor_script_end_to_end(tmp_path: Path) -> None:
 
     alerts_out = tmp_path / "logs" / "alerts.jsonl"
     html_out = tmp_path / "reports" / "monitoring" / "index.html"
+    prom_out = tmp_path / "reports" / "monitoring" / "metrics.prom"
 
     result = module.run_monitoring(
         predictions_path=MOCKS_DIR / "predictions.jsonl",
@@ -245,9 +250,31 @@ def test_monitor_script_end_to_end(tmp_path: Path) -> None:
         drift_summary_path=MOCKS_DIR / "drift_summary.json",
         alerts_path=alerts_out,
         output_html=html_out,
+        output_prom=prom_out,
     )
     assert result == html_out
     assert html_out.exists()
+    assert prom_out.exists()
     assert alerts_out.exists()
     lines = [json.loads(line) for line in alerts_out.read_text(encoding="utf-8").splitlines()]
     assert len(lines) > 0
+
+
+def test_prometheus_exporter_generates_metrics(tmp_path: Path) -> None:
+    """Exportador Prometheus gera gauges credit_risk_* por janela e alertas (T3.7)."""
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    alerts = evaluate_alerts(health)
+
+    payload = render_prometheus_metrics(health, alerts)
+    assert 'credit_risk_share_drifted{window="t5"} 0.3636' in payload
+    assert 'credit_risk_auc{window="t1"} 0.924' in payload
+    assert 'credit_risk_alerts_total{severity="critical",type="data_drift",window="t4"}' in payload
+
+    prom_file = tmp_path / "metrics.prom"
+    write_prometheus_metrics(health, alerts, prom_file)
+    assert prom_file.exists()
+    assert "credit_risk_prediction_psi" in prom_file.read_text(encoding="utf-8")

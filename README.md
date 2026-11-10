@@ -264,10 +264,27 @@ O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/moni
 | Caminho | Conteúdo |
 |---|---|
 | `reports/monitoring/index.html` | Painel visual consolidado de saúde, alertas e links para relatórios Evidently |
+| `reports/monitoring/metrics.prom` | Métricas de saúde e alertas exportadas no formato OpenMetrics/Prometheus |
 | `logs/validation.jsonl` | Histórico centralizado de lotes aprovados e bloqueados pelo contrato Pandera |
 | `logs/predictions.jsonl` | Log centralizado de predições por janela, pseudonimizado (SHA-256 + salt) e sem PII |
 | `logs/alerts.jsonl` | Alertas estruturados disparados pelas regras de degradação e qualidade |
 | `tests/fixtures/mocks/` | Mocks dos contratos de interface (`T3.0`) para testes unitários rápidos da Etapa 3 |
+
+### Integração Prometheus + Grafana (`T3.7`)
+
+Além do painel HTML estático, `src/credit_risk/monitoring/prometheus_exporter.py` exporta todas as métricas de saúde e alertas via `prometheus-client` (`credit_risk_window_volume`, `credit_risk_share_drifted`, `credit_risk_prediction_psi`, `credit_risk_auc`, `credit_risk_auc_drop`, `credit_risk_latency_p95_ms`, `credit_risk_alerts_total` etc.).
+
+Para expor o endpoint HTTP `/metrics` e subir a stack Prometheus + Grafana:
+
+```bash
+# Terminal 1: inicia o exportador em http://localhost:8000/metrics
+uv run python scripts/monitor.py --serve-metrics --port 8000
+
+# Terminal 2: sobe Prometheus (:9090) e Grafana (:3000)
+docker compose -f configs/monitoring/docker-compose.yml up -d
+```
+
+No Grafana (`http://localhost:3000`, login `admin`/`admin`), basta adicionar a fonte Prometheus (`http://prometheus:9090`) e importar o dashboard pronto em `configs/monitoring/grafana_dashboard.json`.
 
 ## Etapa 4: Governança e LGPD
 
