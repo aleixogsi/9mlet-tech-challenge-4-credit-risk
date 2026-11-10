@@ -55,7 +55,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 - [x] Criar o registro centralizado de predições sem PII `T3.1`
 - [x] Calcular métricas de saúde `T3.2`
 - [x] Criar alertas de degradação `T3.3`
-- [ ] Montar o painel com métricas, alertas e links `T3.4`
+- [x] Montar o painel com métricas, alertas e links `T3.4`
 - [ ] Fazer o painel ler os arquivos reais `T3.5`
 - [ ] Documentar as métricas de saúde no README `T3.6`
 - [ ] Gerar e versionar os relatórios e logs finais `T3.8`

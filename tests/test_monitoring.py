@@ -17,6 +17,7 @@ from credit_risk.monitoring.alerts import (
     evaluate_alerts,
     write_alerts,
 )
+from credit_risk.monitoring.dashboard import build_dashboard
 from credit_risk.monitoring.health import (
     HEALTH_COLUMNS,
     compute_health,
@@ -197,3 +198,29 @@ def test_all_alert_types_and_write_alerts(tmp_path: Path) -> None:
     loaded = [json.loads(line) for line in alerts_path.read_text(encoding="utf-8").splitlines()]
     assert len(loaded) == len(alerts)
     assert tuple(loaded[0].keys()) == ALERT_FIELDS
+
+
+def test_build_dashboard_renders_health_alerts_and_links(tmp_path: Path) -> None:
+    """build_dashboard gera o HTML com as 3 seções obrigatórias e links (T3.4)."""
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    alerts = evaluate_alerts(health)
+    output_html = tmp_path / "monitoring" / "index.html"
+
+    result_path = build_dashboard(health, alerts, output_html)
+    assert result_path == output_html
+    assert output_html.exists()
+
+    html_content = output_html.read_text(encoding="utf-8")
+    assert "1. Métricas de Saúde por Janela" in html_content
+    assert "2. Alertas de Degradação e Qualidade" in html_content
+    assert "3. Relatórios Evidently e Evidências de Auditoria" in html_content
+    for win in ["t1", "t2", "t3", "t4", "t5"]:
+        assert f"../drift/drift_{win}.html" in html_content
+        assert f"../drift/performance_{win}.html" in html_content
+    assert "../validation/bad_batch_failures.csv" in html_content
+    assert "cell-critical" in html_content
+    assert "badge-critical" in html_content

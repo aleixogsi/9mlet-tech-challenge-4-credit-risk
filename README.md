@@ -242,7 +242,14 @@ O módulo `src/credit_risk/monitoring/alerts.py` avalia a tabela de saúde contr
 | `null_predictions` | `null_predictions_pct` | `> 1%` de predições nulas/erro (`ALERT_NULL_PREDICTIONS_PCT`) | `warning` / `critical` |
 | `latency` | `latency_p95_ms` | Latência p95 `> 200 ms` (`ALERT_LATENCY_P95_MS`) | `warning` / `critical` |
 
-TODO(T3.6): link para `reports/monitoring/index.html` e resumo dos alertas nas janelas reais.
+### Painel HTML de monitoramento (`T3.4`)
+
+O módulo `src/credit_risk/monitoring/dashboard.py` gera `reports/monitoring/index.html` via `build_dashboard`, reunindo em uma única página autocontida:
+1. **KPIs executivos** e **Tabela de Métricas de Saúde por Janela (`t1`..`t5`)**, com destaque visual (`cell-warning` e `cell-critical`) nas métricas que cruzam os limiares;
+2. **Tabela de Alertas de Degradação e Qualidade**, exibindo severidade, tipo, valor observado vs. threshold e descrição;
+3. **Links diretos para as evidências**, apontando para os relatórios HTML do Evidently (`reports/drift/drift_<janela>.html` e `performance_<janela>.html`), tabelas `psi_ks_<janela>.csv` e falhas do contrato (`reports/validation/bad_batch_failures.csv`).
+
+TODO(T3.6): resumo dos alertas nas janelas reais.
 
 ## Etapa 4: Governança e LGPD
 
