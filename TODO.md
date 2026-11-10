@@ -56,8 +56,8 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 - [x] Calcular métricas de saúde `T3.2`
 - [x] Criar alertas de degradação `T3.3`
 - [x] Montar o painel com métricas, alertas e links `T3.4`
-- [ ] Fazer o painel ler os arquivos reais `T3.5`
-- [ ] Documentar as métricas de saúde no README `T3.6`
+- [x] Fazer o painel ler os arquivos reais `T3.5`
+- [x] Documentar as métricas de saúde no README `T3.6`
 - [ ] Gerar e versionar os relatórios e logs finais `T3.8`
 - [ ] Implementar o extra Grafana + Prometheus, se adotado `T3.7`
 

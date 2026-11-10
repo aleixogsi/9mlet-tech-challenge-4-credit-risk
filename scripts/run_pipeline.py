@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from credit_risk import config
+
 logger = logging.getLogger(__name__)
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -22,12 +24,7 @@ STEPS: list[tuple[str, list[str], bool]] = [
         ["validate_data.py", "data/reference/reference.parquet", "--schema", "training"],
         False,
     ),
-    ("1. Gerar lote com erros", ["validate_data.py", "--make-bad-batch"], False),
-    (
-        "1. Lote com erros deve ser BLOQUEADO",
-        ["validate_data.py", "data/bad_batches/bad_batch.parquet"],
-        True,
-    ),
+    ("1. Gerar e bloquear lote com erros", ["validate_data.py", "--make-bad-batch"], True),
     ("1. Treinar baseline", ["train_baseline.py"], False),
     ("4. Relatório de vieses", ["bias_report.py"], False),
     ("2. Simular drift", ["simulate_drift.py"], False),
@@ -37,9 +34,15 @@ STEPS: list[tuple[str, list[str], bool]] = [
 ]
 
 
+def clean_logs() -> None:
+    """Remove logs anteriores para garantir uma execução limpa e determinística."""
+    for log_file in (config.PREDICTIONS_LOG, config.VALIDATION_LOG, config.ALERTS_LOG):
+        if log_file.exists():
+            log_file.unlink()
+
+
 def main() -> int:
-    # TODO(T3.5): limpar logs/ antes de rodar (os logs finais são versionados).
-    # Revisar a ordem e os argumentos conforme os scripts forem implementados.
+    clean_logs()
     for description, args, should_fail in STEPS:
         logger.info("▶ %s", description)
         result = subprocess.run([sys.executable, str(SCRIPTS_DIR / args[0]), *args[1:]])

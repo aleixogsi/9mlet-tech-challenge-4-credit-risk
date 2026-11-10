@@ -204,30 +204,35 @@ Leitura dos resultados:
 
 ## Etapa 3: Observabilidade e monitoramento
 
-A camada de observabilidade integra os logs operacionais de validação (`logs/validation.jsonl`) e de inferência sem PII (`logs/predictions.jsonl`) aos resultados estatísticos de drift (`reports/drift/drift_summary.json`).
+A camada de observabilidade integra os logs operacionais de validação (`logs/validation.jsonl`) e de inferência sem PII (`logs/predictions.jsonl`) aos resultados estatísticos de drift (`reports/drift/drift_summary.json`), produzindo alertas automatizados (`logs/alerts.jsonl`) e o painel consolidado (`reports/monitoring/index.html`).
 
-### Testes de observabilidade e mocks (`T3.0`)
-
-Para permitir testes unitários rápidos e desacoplados da execução completa do pipeline, `tests/fixtures/mocks/` disponibiliza arquivos sintéticos que seguem estritamente os contratos de interface do projeto (`predictions.jsonl`, `validation.jsonl` e `drift_summary.json`):
+### Execução
 
 ```bash
+uv run python scripts/monitor.py
 uv run pytest tests/test_monitoring.py
+```
+
+Para executar todo o pipeline ponta a ponta (Etapas 1 a 3):
+
+```bash
+uv run python scripts/run_pipeline.py
 ```
 
 ### Registro centralizado de predições sem PII (`T3.1`)
 
 O módulo `src/credit_risk/monitoring/prediction_logger.py` implementa `log_predictions` e `read_predictions`, garantindo que cada linha gravada em `logs/predictions.jsonl` contenha exclusivamente os campos autorizados (`timestamp`, `window`, `record_id`, `score`, `decision`, `latency_ms`, `model_version`) e que `record_id` seja obrigatoriamente um hash SHA-256 hexadecimal de 64 caracteres (bloqueando qualquer tentativa de gravar identificadores originais ou PII).
 
-### Métricas de saúde operacionais e do modelo (`T3.2`)
+### Métricas de saúde operacionais e do modelo (`T3.2` e `T3.6`)
 
-O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de inferência, validação e drift em uma tabela por janela (`compute_health`), calculando:
+O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de inferência, validação e drift em uma tabela por janela (`compute_health`), cobrindo quatro dimensões de observabilidade:
 
-| Categoria | Métricas calculadas |
-|---|---|
-| **Saúde operacional** | `volume`, `null_predictions_pct` (% de predições nulas/`error`), `n_batches`, `n_blocked_batches`, `blocked_batches_pct` (% de lotes bloqueados pelo contrato), `latency_p50_ms`, `latency_p95_ms` |
-| **Prediction drift** | `mean_score`, `reference_mean_score`, `approval_rate` (taxa de aprovação em predições válidas), `prediction_psi` |
-| **Data drift** | `n_features`, `n_drifted`, `share_drifted`, `drifted_features` |
-| **Performance (Concept drift)** | `auc`, `reference_auc`, `auc_drop`, `ks`, `gini` |
+| Dimensão | Métricas calculadas | Finalidade operacional |
+|---|---|---|
+| **Saúde operacional do pipeline** | `volume`, `null_predictions_pct`, `n_batches`, `n_blocked_batches`, `blocked_batches_pct`, `latency_p50_ms`, `latency_p95_ms` | Detectar falhas de execução em micro-lotes, violações de contrato bloqueadas pelo Pandera e degradação de tempo de resposta |
+| **Prediction drift** | `mean_score`, `reference_mean_score`, `approval_rate`, `prediction_psi` | Monitorar deslocamento na distribuição das probabilidades de default e na taxa de concessão de crédito antes da chegada do rótulo real |
+| **Data drift** | `n_features`, `n_drifted`, `share_drifted`, `drifted_features` | Quantificar a proporção de variáveis de entrada que sofreram mudança estatística (PSI > 0,25 ou KS p-valor < 0,05) |
+| **Performance (Concept drift)** | `auc`, `reference_auc`, `auc_drop`, `ks`, `gini` | Medir a perda de poder discriminante do classificador frente à mudança na relação `P(y\|X)` |
 
 ### Regras de alerta de degradação (`T3.3`)
 
@@ -242,14 +247,27 @@ O módulo `src/credit_risk/monitoring/alerts.py` avalia a tabela de saúde contr
 | `null_predictions` | `null_predictions_pct` | `> 1%` de predições nulas/erro (`ALERT_NULL_PREDICTIONS_PCT`) | `warning` / `critical` |
 | `latency` | `latency_p95_ms` | Latência p95 `> 200 ms` (`ALERT_LATENCY_P95_MS`) | `warning` / `critical` |
 
-### Painel HTML de monitoramento (`T3.4`)
+Nas janelas simuladas (`t1` a `t5`) e na validação do lote inválido (`bad_batch`), o monitoramento identifica:
+- **`bad_batch`**: alerta `contract_blocked` (`critical`) pelo bloqueio preventivo das 12 violações de contrato;
+- **`t1` e `t2`**: operação saudável, sem alertas disparados (`share_drifted` em 18,2%, abaixo de 30%, e `prediction_psi` < 0,10);
+- **`t3`**: alerta `prediction_drift` (`warning`, PSI do score = 0,224), sinalizando precocemente o deslocamento de score provocado pela alta de juros e comprometimento de renda;
+- **`t4`**: alertas `data_drift` (`critical`, 36,4% das features com drift), `prediction_drift` (`critical`, PSI do score = 0,625) e `performance_drop` (`warning`, queda de AUC = 0,099);
+- **`t5`**: alertas `data_drift` (`critical`, 36,4% das features com drift), `prediction_drift` (`critical`, PSI do score = 0,830) e `performance_drop` (`critical`, queda de AUC = 0,140).
 
-O módulo `src/credit_risk/monitoring/dashboard.py` gera `reports/monitoring/index.html` via `build_dashboard`, reunindo em uma única página autocontida:
+### Painel HTML e artefatos de monitoramento (`T3.4` e `T3.5`)
+
+O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/monitor.py` geram [reports/monitoring/index.html](reports/monitoring/index.html), reunindo:
 1. **KPIs executivos** e **Tabela de Métricas de Saúde por Janela (`t1`..`t5`)**, com destaque visual (`cell-warning` e `cell-critical`) nas métricas que cruzam os limiares;
 2. **Tabela de Alertas de Degradação e Qualidade**, exibindo severidade, tipo, valor observado vs. threshold e descrição;
 3. **Links diretos para as evidências**, apontando para os relatórios HTML do Evidently (`reports/drift/drift_<janela>.html` e `performance_<janela>.html`), tabelas `psi_ks_<janela>.csv` e falhas do contrato (`reports/validation/bad_batch_failures.csv`).
 
-TODO(T3.6): resumo dos alertas nas janelas reais.
+| Caminho | Conteúdo |
+|---|---|
+| `reports/monitoring/index.html` | Painel visual consolidado de saúde, alertas e links para relatórios Evidently |
+| `logs/validation.jsonl` | Histórico centralizado de lotes aprovados e bloqueados pelo contrato Pandera |
+| `logs/predictions.jsonl` | Log centralizado de predições por janela, pseudonimizado (SHA-256 + salt) e sem PII |
+| `logs/alerts.jsonl` | Alertas estruturados disparados pelas regras de degradação e qualidade |
+| `tests/fixtures/mocks/` | Mocks dos contratos de interface (`T3.0`) para testes unitários rápidos da Etapa 3 |
 
 ## Etapa 4: Governança e LGPD
 

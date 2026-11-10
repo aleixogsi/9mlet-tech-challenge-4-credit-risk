@@ -224,3 +224,30 @@ def test_build_dashboard_renders_health_alerts_and_links(tmp_path: Path) -> None
     assert "../validation/bad_batch_failures.csv" in html_content
     assert "cell-critical" in html_content
     assert "badge-critical" in html_content
+
+
+def test_monitor_script_end_to_end(tmp_path: Path) -> None:
+    """scripts/monitor.py lê os artefatos, grava alerts.jsonl e gera index.html (T3.5)."""
+    import importlib.util
+
+    script_path = Path(__file__).parents[1] / "scripts" / "monitor.py"
+    spec = importlib.util.spec_from_file_location("monitor_script", script_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    alerts_out = tmp_path / "logs" / "alerts.jsonl"
+    html_out = tmp_path / "reports" / "monitoring" / "index.html"
+
+    result = module.run_monitoring(
+        predictions_path=MOCKS_DIR / "predictions.jsonl",
+        validation_path=MOCKS_DIR / "validation.jsonl",
+        drift_summary_path=MOCKS_DIR / "drift_summary.json",
+        alerts_path=alerts_out,
+        output_html=html_out,
+    )
+    assert result == html_out
+    assert html_out.exists()
+    assert alerts_out.exists()
+    lines = [json.loads(line) for line in alerts_out.read_text(encoding="utf-8").splitlines()]
+    assert len(lines) > 0
