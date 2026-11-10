@@ -10,6 +10,13 @@ import pandas as pd
 import pytest
 
 from credit_risk.inference import PREDICTION_FIELDS, build_prediction_records
+from credit_risk.monitoring.alerts import (
+    ALERT_FIELDS,
+    ALERT_SEVERITIES,
+    ALERT_TYPES,
+    evaluate_alerts,
+    write_alerts,
+)
 from credit_risk.monitoring.health import (
     HEALTH_COLUMNS,
     compute_health,
@@ -157,6 +164,36 @@ def test_health_metrics_per_window() -> None:
     assert health.attrs["extra_blocked_batches"][0]["batch_name"] == "bad_batch"
 
 
-@pytest.mark.skip(reason="TODO(T3.3): implementar após evaluate_alerts")
 def test_drift_alert_fires_above_threshold() -> None:
-    """Share de features com drift ≥ ALERT_DRIFT_SHARE → alerta data_drift."""
+    """Share de features com drift ≥ ALERT_DRIFT_SHARE → alerta data_drift (T3.3)."""
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    alerts = evaluate_alerts(health)
+
+    data_drift_windows = [a["window"] for a in alerts if a["type"] == "data_drift"]
+    assert data_drift_windows == ["t4", "t5"]
+
+
+def test_all_alert_types_and_write_alerts(tmp_path: Path) -> None:
+    """Todos os 6 tipos de alerta são avaliados e gravados em alerts.jsonl (T3.3)."""
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    alerts = evaluate_alerts(health)
+
+    fired_types = {a["type"] for a in alerts}
+    assert fired_types == ALERT_TYPES
+    for alert in alerts:
+        assert tuple(alert.keys()) == ALERT_FIELDS
+        assert alert["severity"] in ALERT_SEVERITIES
+
+    alerts_path = tmp_path / "alerts.jsonl"
+    write_alerts(alerts, alerts_path)
+    loaded = [json.loads(line) for line in alerts_path.read_text(encoding="utf-8").splitlines()]
+    assert len(loaded) == len(alerts)
+    assert tuple(loaded[0].keys()) == ALERT_FIELDS

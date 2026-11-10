@@ -229,7 +229,20 @@ O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de infer
 | **Data drift** | `n_features`, `n_drifted`, `share_drifted`, `drifted_features` |
 | **Performance (Concept drift)** | `auc`, `reference_auc`, `auc_drop`, `ks`, `gini` |
 
-TODO(T3.6): alertas e link para `reports/monitoring/index.html`.
+### Regras de alerta de degradação (`T3.3`)
+
+O módulo `src/credit_risk/monitoring/alerts.py` avalia a tabela de saúde contra os limiares de `src/credit_risk/config.py` e registra os eventos em `logs/alerts.jsonl`:
+
+| Tipo (`type`) | Métrica (`metric`) | Regra de disparo | Severidade |
+|---|---|---|---|
+| `contract_blocked` | `blocked_batches_pct` | `> 0%` na janela ou lote reprovado no contrato (`bad_batch`) | `critical` |
+| `data_drift` | `share_drifted` | `≥ 30%` das features com drift (`ALERT_DRIFT_SHARE`) | `critical` |
+| `prediction_drift` | `prediction_psi` | `0,10–0,25` (`PSI_WARNING`) ou `> 0,25` (`PSI_DRIFT`) | `warning` / `critical` |
+| `performance_drop` | `auc_drop` | Queda de AUC `> 0,05` (`ALERT_AUC_DROP`) | `warning` / `critical` |
+| `null_predictions` | `null_predictions_pct` | `> 1%` de predições nulas/erro (`ALERT_NULL_PREDICTIONS_PCT`) | `warning` / `critical` |
+| `latency` | `latency_p95_ms` | Latência p95 `> 200 ms` (`ALERT_LATENCY_P95_MS`) | `warning` / `critical` |
+
+TODO(T3.6): link para `reports/monitoring/index.html` e resumo dos alertas nas janelas reais.
 
 ## Etapa 4: Governança e LGPD
 
