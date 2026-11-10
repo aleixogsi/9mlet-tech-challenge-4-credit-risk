@@ -204,6 +204,16 @@ Leitura dos resultados:
 
 ## Etapa 3: Observabilidade e monitoramento
 
+A camada de observabilidade integra os logs operacionais de validação (`logs/validation.jsonl`) e de inferência sem PII (`logs/predictions.jsonl`) aos resultados estatísticos de drift (`reports/drift/drift_summary.json`).
+
+### Testes de observabilidade e mocks (`T3.0`)
+
+Para permitir testes unitários rápidos e desacoplados da execução completa do pipeline, `tests/fixtures/mocks/` disponibiliza arquivos sintéticos que seguem estritamente os contratos de interface do projeto (`predictions.jsonl`, `validation.jsonl` e `drift_summary.json`):
+
+```bash
+uv run pytest tests/test_monitoring.py
+```
+
 TODO(T3.6): métricas de saúde escolhidas, alertas e link para `reports/monitoring/index.html`.
 
 ## Etapa 4: Governança e LGPD

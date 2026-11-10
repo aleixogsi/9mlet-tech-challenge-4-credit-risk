@@ -51,7 +51,7 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 
 ## 🧭 Etapa 3 · Observabilidade e monitoramento · Fernando
 
-- [ ] Criar arquivos de exemplo para desenvolvimento do painel `T3.0`
+- [x] Criar arquivos de exemplo para desenvolvimento do painel `T3.0`
 - [ ] Criar o registro centralizado de predições sem PII `T3.1`
 - [ ] Calcular métricas de saúde `T3.2`
 - [ ] Criar alertas de degradação `T3.3`

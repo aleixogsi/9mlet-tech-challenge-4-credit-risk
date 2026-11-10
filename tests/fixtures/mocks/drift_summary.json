@@ -1,0 +1,206 @@
+{
+  "generated_at": "2026-11-05T12:05:00Z",
+  "reference_rows": 17180,
+  "windows": [
+    {
+      "window": "t1",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 0,
+      "share_drifted": 0.0,
+      "features": [
+        {
+          "feature": "person_income",
+          "psi": 0.006,
+          "ks_pvalue": 0.74,
+          "status": "stable",
+          "drift_detected": false
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 0.004,
+          "ks_pvalue": 0.53,
+          "status": "stable",
+          "drift_detected": false
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.004,
+        "mean_score_ref": 0.217,
+        "mean_score_cur": 0.214
+      },
+      "performance": {
+        "auc": 0.924,
+        "ks": 0.711
+      },
+      "report_html": "reports/drift/drift_t1.html"
+    },
+    {
+      "window": "t2",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 2,
+      "share_drifted": 0.1818,
+      "features": [
+        {
+          "feature": "person_income",
+          "psi": 0.023,
+          "ks_pvalue": 0.0001,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 0.189,
+          "ks_pvalue": 0.0001,
+          "status": "warning",
+          "drift_detected": true
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.022,
+        "mean_score_ref": 0.217,
+        "mean_score_cur": 0.224
+      },
+      "performance": {
+        "auc": 0.914,
+        "ks": 0.691
+      },
+      "report_html": "reports/drift/drift_t2.html"
+    },
+    {
+      "window": "t3",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 3,
+      "share_drifted": 0.2727,
+      "features": [
+        {
+          "feature": "person_income",
+          "psi": 0.045,
+          "ks_pvalue": 0.0001,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 1.98,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 0.201,
+          "ks_pvalue": 0.0001,
+          "status": "warning",
+          "drift_detected": true
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.224,
+        "mean_score_ref": 0.217,
+        "mean_score_cur": 0.288
+      },
+      "performance": {
+        "auc": 0.891,
+        "ks": 0.647
+      },
+      "report_html": "reports/drift/drift_t3.html"
+    },
+    {
+      "window": "t4",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 4,
+      "share_drifted": 0.3636,
+      "features": [
+        {
+          "feature": "person_income",
+          "psi": 0.064,
+          "ks_pvalue": 0.0,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.279,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 2.897,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 1.064,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.625,
+        "mean_score_ref": 0.217,
+        "mean_score_cur": 0.39
+      },
+      "performance": {
+        "auc": 0.842,
+        "ks": 0.567
+      },
+      "report_html": "reports/drift/drift_t4.html"
+    },
+    {
+      "window": "t5",
+      "rows": 5000,
+      "n_features": 11,
+      "n_drifted": 4,
+      "share_drifted": 0.3636,
+      "features": [
+        {
+          "feature": "person_income",
+          "psi": 0.068,
+          "ks_pvalue": 0.0,
+          "status": "stable",
+          "drift_detected": true
+        },
+        {
+          "feature": "person_emp_length",
+          "psi": 0.55,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_int_rate",
+          "psi": 3.883,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        },
+        {
+          "feature": "loan_percent_income",
+          "psi": 1.511,
+          "ks_pvalue": 0.0,
+          "status": "drift",
+          "drift_detected": true
+        }
+      ],
+      "prediction_drift": {
+        "psi": 0.83,
+        "mean_score_ref": 0.217,
+        "mean_score_cur": 0.444
+      },
+      "performance": {
+        "auc": 0.801,
+        "ks": 0.48
+      },
+      "report_html": "reports/drift/drift_t5.html"
+    }
+  ]
+}
