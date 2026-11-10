@@ -10,6 +10,12 @@ import pandas as pd
 import pytest
 
 from credit_risk.inference import PREDICTION_FIELDS, build_prediction_records
+from credit_risk.monitoring.health import (
+    HEALTH_COLUMNS,
+    compute_health,
+    read_drift_summary,
+    read_validation_log,
+)
 from credit_risk.monitoring.prediction_logger import log_predictions, read_predictions
 
 MOCKS_DIR = Path(__file__).parent / "fixtures" / "mocks"
@@ -116,9 +122,39 @@ def test_read_predictions_handles_mock_and_missing_file(tmp_path: Path) -> None:
         read_predictions(tmp_path / "inexistente.jsonl")
 
 
-@pytest.mark.skip(reason="TODO(T3.2): implementar após compute_health")
 def test_health_metrics_per_window() -> None:
-    """compute_health devolve uma linha por janela com as métricas esperadas."""
+    """compute_health devolve uma linha por janela com as métricas esperadas (T3.2)."""
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    assert list(health.columns) == HEALTH_COLUMNS
+    assert list(health["window"]) == ["t1", "t2", "t3", "t4", "t5"]
+    assert (health["volume"] == 3).all()
+
+    t1 = health.loc[health["window"] == "t1"].iloc[0]
+    assert t1["null_predictions_pct"] == 0.0
+    assert t1["blocked_batches_pct"] == 0.0
+    assert pytest.approx(t1["approval_rate"], rel=1e-4) == 2 / 3
+    assert t1["share_drifted"] == 0.0
+    assert t1["drifted_features"] == []
+
+    t4 = health.loc[health["window"] == "t4"].iloc[0]
+    assert pytest.approx(t4["null_predictions_pct"], rel=1e-4) == 1 / 3
+    assert t4["n_batches"] == 2
+    assert t4["n_blocked_batches"] == 1
+    assert t4["blocked_batches_pct"] == 0.5
+    assert t4["n_drifted"] == 4
+    assert t4["share_drifted"] == 0.3636
+    assert "loan_int_rate" in t4["drifted_features"]
+    assert t4["auc_drop"] > 0.05
+
+    t5 = health.loc[health["window"] == "t5"].iloc[0]
+    assert t5["latency_p95_ms"] > 200.0
+    assert pytest.approx(t5["gini"], rel=1e-4) == 2 * t5["auc"] - 1
+    assert len(health.attrs["extra_blocked_batches"]) == 1
+    assert health.attrs["extra_blocked_batches"][0]["batch_name"] == "bad_batch"
 
 
 @pytest.mark.skip(reason="TODO(T3.3): implementar após evaluate_alerts")

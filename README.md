@@ -218,7 +218,18 @@ uv run pytest tests/test_monitoring.py
 
 O módulo `src/credit_risk/monitoring/prediction_logger.py` implementa `log_predictions` e `read_predictions`, garantindo que cada linha gravada em `logs/predictions.jsonl` contenha exclusivamente os campos autorizados (`timestamp`, `window`, `record_id`, `score`, `decision`, `latency_ms`, `model_version`) e que `record_id` seja obrigatoriamente um hash SHA-256 hexadecimal de 64 caracteres (bloqueando qualquer tentativa de gravar identificadores originais ou PII).
 
-TODO(T3.6): métricas de saúde escolhidas, alertas e link para `reports/monitoring/index.html`.
+### Métricas de saúde operacionais e do modelo (`T3.2`)
+
+O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de inferência, validação e drift em uma tabela por janela (`compute_health`), calculando:
+
+| Categoria | Métricas calculadas |
+|---|---|
+| **Saúde operacional** | `volume`, `null_predictions_pct` (% de predições nulas/`error`), `n_batches`, `n_blocked_batches`, `blocked_batches_pct` (% de lotes bloqueados pelo contrato), `latency_p50_ms`, `latency_p95_ms` |
+| **Prediction drift** | `mean_score`, `reference_mean_score`, `approval_rate` (taxa de aprovação em predições válidas), `prediction_psi` |
+| **Data drift** | `n_features`, `n_drifted`, `share_drifted`, `drifted_features` |
+| **Performance (Concept drift)** | `auc`, `reference_auc`, `auc_drop`, `ks`, `gini` |
+
+TODO(T3.6): alertas e link para `reports/monitoring/index.html`.
 
 ## Etapa 4: Governança e LGPD
 
