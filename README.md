@@ -214,6 +214,10 @@ Para permitir testes unitários rápidos e desacoplados da execução completa d
 uv run pytest tests/test_monitoring.py
 ```
 
+### Registro centralizado de predições sem PII (`T3.1`)
+
+O módulo `src/credit_risk/monitoring/prediction_logger.py` implementa `log_predictions` e `read_predictions`, garantindo que cada linha gravada em `logs/predictions.jsonl` contenha exclusivamente os campos autorizados (`timestamp`, `window`, `record_id`, `score`, `decision`, `latency_ms`, `model_version`) e que `record_id` seja obrigatoriamente um hash SHA-256 hexadecimal de 64 caracteres (bloqueando qualquer tentativa de gravar identificadores originais ou PII).
+
 TODO(T3.6): métricas de saúde escolhidas, alertas e link para `reports/monitoring/index.html`.
 
 ## Etapa 4: Governança e LGPD

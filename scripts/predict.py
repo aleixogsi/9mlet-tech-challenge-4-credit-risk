@@ -8,7 +8,6 @@ Uso: uv run python scripts/predict.py [--window t3]
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -56,16 +55,8 @@ def predict_window(model: Any, name: str, salt: str) -> list[dict[str, Any]] | N
 
 
 def write_log(records: list[dict[str, Any]], path: Path) -> int:
-    """Grava pelo logger centralizado (T3.1); enquanto ele não existe, anexa o JSONL direto."""
-    try:
-        return log_predictions(records, path)
-    except NotImplementedError:
-        # TODO(T3.1): remover este fallback quando log_predictions estiver implementado.
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            for record in records:
-                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
-        return len(records)
+    """Grava os registros de predição usando o logger centralizado sem PII (T3.1)."""
+    return log_predictions(records, path)
 
 
 def main() -> int:
