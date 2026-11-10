@@ -3,15 +3,17 @@
   "uid": "credit-risk-phase4",
   "schemaVersion": 39,
   "version": 1,
-  "refresh": "10s",
+  "refresh": "5s",
   "panels": [
     {
       "id": 1,
       "title": "Share de Features com Drift por Janela",
       "type": "bargauge",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
       "targets": [
         {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "credit_risk_share_drifted",
           "legendFormat": "{{window}}"
         }
@@ -21,13 +23,16 @@
       "id": 2,
       "title": "ROC AUC e Queda de Performance por Janela",
       "type": "bargauge",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
       "targets": [
         {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "credit_risk_auc",
           "legendFormat": "AUC {{window}}"
         },
         {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "credit_risk_auc_drop",
           "legendFormat": "Drop {{window}}"
         }
@@ -35,25 +40,54 @@
     },
     {
       "id": 3,
-      "title": "Prediction Drift (PSI do Score)",
+      "title": "Prediction Drift (PSI do Score) e Score Médio",
       "type": "bargauge",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
       "targets": [
         {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "credit_risk_prediction_psi",
-          "legendFormat": "{{window}}"
+          "legendFormat": "PSI {{window}}"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "credit_risk_mean_score",
+          "legendFormat": "Score Médio {{window}}"
         }
       ]
     },
     {
       "id": 4,
-      "title": "Alertas Disparados por Janela e Severidade",
+      "title": "Alertas Disparados por Janela, Tipo e Severidade",
       "type": "table",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
       "targets": [
         {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "credit_risk_alerts_total",
-          "legendFormat": "{{window}} - {{type}} ({{severity}})"
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Taxa de Aprovação e Latência p95 (ms)",
+      "type": "bargauge",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "credit_risk_approval_rate",
+          "legendFormat": "Taxa Aprovação {{window}}"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "credit_risk_latency_p95_ms",
+          "legendFormat": "Latência p95 (ms) {{window}}"
         }
       ]
     }

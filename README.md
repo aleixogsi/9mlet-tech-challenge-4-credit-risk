@@ -270,21 +270,27 @@ O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/moni
 | `logs/alerts.jsonl` | Alertas estruturados disparados pelas regras de degradação e qualidade |
 | `tests/fixtures/mocks/` | Mocks dos contratos de interface (`T3.0`) para testes unitários rápidos da Etapa 3 |
 
-### Integração Prometheus + Grafana (`T3.7`)
+### Servidor de Observabilidade, Docker, Prometheus e Grafana (`T3.7`)
 
-Além do painel HTML estático, `src/credit_risk/monitoring/prometheus_exporter.py` exporta todas as métricas de saúde e alertas via `prometheus-client` (`credit_risk_window_volume`, `credit_risk_share_drifted`, `credit_risk_prediction_psi`, `credit_risk_auc`, `credit_risk_auc_drop`, `credit_risk_latency_p95_ms`, `credit_risk_alerts_total` etc.).
+Além de gerar os arquivos estáticos em `reports/monitoring/`, o projeto inclui um **Servidor HTTP Unificado** (`src/credit_risk/monitoring/server.py`), um `Dockerfile` e um `docker-compose.yml` com provisioning automático do Prometheus e do Grafana:
 
-Para expor o endpoint HTTP `/metrics` e subir a stack Prometheus + Grafana:
+- **`http://localhost:8000/`**: Painel HTML consolidado (`reports/monitoring/index.html`) e navegação interativa para todos os relatórios do Evidently (`drift_t1..t5.html` e `performance_t1..t5.html`);
+- **`http://localhost:8000/metrics`**: Endpoint OpenMetrics/Prometheus com os gauges `credit_risk_*`;
+- **`http://localhost:8000/api/health` e `/api/alerts`**: Endpoints JSON com o estado de saúde e alertas;
+- **`http://localhost:9090/`**: Interface do Prometheus coletando o serviço `monitor:8000`;
+- **`http://localhost:3000/`**: Grafana com datasource Prometheus e dashboard **Credit Risk — Observabilidade, Drift e Saúde** já carregados automaticamente como página inicial (acesso direto sem login ou `admin`/`admin`).
+
+Para subir toda a stack via Docker Compose:
 
 ```bash
-# Terminal 1: inicia o exportador em http://localhost:8000/metrics
-uv run python scripts/monitor.py --serve-metrics --port 8000
-
-# Terminal 2: sobe Prometheus (:9090) e Grafana (:3000)
-docker compose -f configs/monitoring/docker-compose.yml up -d
+docker compose up --build -d
 ```
 
-No Grafana (`http://localhost:3000`, login `admin`/`admin`), basta adicionar a fonte Prometheus (`http://prometheus:9090`) e importar o dashboard pronto em `configs/monitoring/grafana_dashboard.json`.
+Ou para iniciar apenas o servidor HTTP localmente sem Docker:
+
+```bash
+uv run python scripts/monitor.py --serve --port 8000
+```
 
 ## Etapa 4: Governança e LGPD
 

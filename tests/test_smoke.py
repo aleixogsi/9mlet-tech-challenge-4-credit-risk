@@ -28,6 +28,7 @@ MODULES = [
     "credit_risk.monitoring.alerts",
     "credit_risk.monitoring.dashboard",
     "credit_risk.monitoring.prometheus_exporter",
+    "credit_risk.monitoring.server",
 ]
 
 

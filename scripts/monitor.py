@@ -2,7 +2,7 @@
 
 Uso:
     uv run python scripts/monitor.py
-    uv run python scripts/monitor.py --serve-metrics --port 8000
+    uv run python scripts/monitor.py --serve --port 8000
 """
 
 from __future__ import annotations
@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-import time
 from pathlib import Path
 
 from credit_risk import config
@@ -22,10 +21,8 @@ from credit_risk.monitoring.health import (
     read_validation_log,
 )
 from credit_risk.monitoring.prediction_logger import read_predictions
-from credit_risk.monitoring.prometheus_exporter import (
-    start_metrics_server,
-    write_prometheus_metrics,
-)
+from credit_risk.monitoring.prometheus_exporter import write_prometheus_metrics
+from credit_risk.monitoring.server import create_observability_server
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +30,22 @@ logger = logging.getLogger(__name__)
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--serve",
         "--serve-metrics",
+        dest="serve",
         action="store_true",
-        help="Mantém servidor HTTP Prometheus ativo em /metrics (T3.7)",
+        help="Mantém servidor HTTP unificado ativo (Painel HTML, Evidently, API JSON e /metrics)",
+    )
+    parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="Host do servidor HTTP (padrão: 0.0.0.0)",
     )
     parser.add_argument(
         "--port",
         type=int,
         default=8000,
-        help="Porta do servidor HTTP Prometheus (padrão: 8000)",
+        help="Porta do servidor HTTP (padrão: 8000)",
     )
     return parser.parse_args(argv)
 
@@ -92,19 +96,29 @@ def run_monitoring(
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     run_monitoring()
-    if args.serve_metrics:
+    if args.serve:
         predictions = read_predictions(config.PREDICTIONS_LOG)
         validation_log = read_validation_log(config.VALIDATION_LOG)
         drift_results = read_drift_summary(config.DRIFT_REPORTS_DIR / "drift_summary.json")
         health = compute_health(predictions, validation_log, drift_results)
         alerts = evaluate_alerts(health)
-        start_metrics_server(health, alerts, port=args.port)
-        logger.info("Servidor Prometheus ativo em http://localhost:%d/metrics", args.port)
+        server = create_observability_server(
+            health=health,
+            alerts=alerts,
+            reports_dir=config.REPORTS_DIR,
+            host=args.host,
+            port=args.port,
+        )
+        logger.info(
+            "Servidor de Observabilidade ativo em http://localhost:%d (/ e /metrics)",
+            args.port,
+        )
         try:
-            while True:
-                time.sleep(1.0)
+            server.serve_forever()
         except KeyboardInterrupt:
-            logger.info("Servidor Prometheus encerrado.")
+            logger.info("Servidor de Observabilidade encerrado.")
+        finally:
+            server.server_close()
     return 0
 
 

@@ -29,6 +29,7 @@ from credit_risk.monitoring.prometheus_exporter import (
     render_prometheus_metrics,
     write_prometheus_metrics,
 )
+from credit_risk.monitoring.server import create_observability_server
 
 MOCKS_DIR = Path(__file__).parent / "fixtures" / "mocks"
 VALIDATION_FIELDS = ("timestamp", "batch_name", "rows", "status", "n_failures", "failed_rules")
@@ -278,3 +279,47 @@ def test_prometheus_exporter_generates_metrics(tmp_path: Path) -> None:
     write_prometheus_metrics(health, alerts, prom_file)
     assert prom_file.exists()
     assert "credit_risk_prediction_psi" in prom_file.read_text(encoding="utf-8")
+
+
+def test_observability_server_endpoints(tmp_path: Path) -> None:
+    """Servidor HTTP unificado responde em /, /monitoring/index.html, /metrics e /api/*."""
+    import threading
+    from urllib.request import urlopen
+
+    predictions = read_predictions(MOCKS_DIR / "predictions.jsonl")
+    validation_log = read_validation_log(MOCKS_DIR / "validation.jsonl")
+    drift_results = read_drift_summary(MOCKS_DIR / "drift_summary.json")
+
+    health = compute_health(predictions, validation_log, drift_results)
+    alerts = evaluate_alerts(health)
+    build_dashboard(health, alerts, tmp_path / "monitoring" / "index.html")
+
+    server = create_observability_server(
+        health=health,
+        alerts=alerts,
+        reports_dir=tmp_path,
+        host="127.0.0.1",
+        port=0,
+    )
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{port}/") as resp:
+            body = resp.read().decode("utf-8")
+            assert "1. Métricas de Saúde por Janela" in body
+
+        with urlopen(f"http://127.0.0.1:{port}/metrics") as resp:
+            metrics_body = resp.read().decode("utf-8")
+            assert "credit_risk_share_drifted" in metrics_body
+
+        with urlopen(f"http://127.0.0.1:{port}/api/health") as resp:
+            health_json = json.loads(resp.read().decode("utf-8"))
+            assert len(health_json) == 5
+
+        with urlopen(f"http://127.0.0.1:{port}/api/alerts") as resp:
+            alerts_json = json.loads(resp.read().decode("utf-8"))
+            assert len(alerts_json) == len(alerts)
+    finally:
+        server.shutdown()
+        server.server_close()
