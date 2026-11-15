@@ -69,8 +69,8 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 - [x] Documentar a análise causal da degradação `T4.4`
 - [x] Documentar como executar o projeto e consultar as evidências `T4.5`
 - [x] Escrever o roteiro do vídeo STAR `T4.6`
-- [ ] Gravar o vídeo STAR com até 5 minutos `T4.7`
-- [ ] Fazer a revisão final dos requisitos, README e vídeo `T4.8` (README e código revisados; falta conferir o vídeo)
+- [x] Gravar o vídeo STAR com até 5 minutos `T4.7` (4:52, publicado em https://youtu.be/efrBXjaSIYo)
+- [ ] Fazer a revisão final dos requisitos, README e vídeo `T4.8` (README, código e vídeo revisados; falta levar a branch para a `main` antes da entrega)
 - [x] Configurar testes automáticos em cada Pull Request `T0.6`
 
 ## 🎁 Tarefas concluídas de preparação

@@ -43,14 +43,14 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Vídeo STAR (15%)
 
-Roteiro pronto em `docs/roteiro-video-star.md` (T4.6). Os itens abaixo dependem da gravação (T4.7).
+Roteiro em `docs/roteiro-video-star.md` (T4.6). Vídeo gravado e publicado em https://youtu.be/efrBXjaSIYo (T4.7).
 
-- [ ] ≤ 5 minutos
-- [ ] Situation: risco da degradação silenciosa
-- [ ] Task: interceptar dados ruins, detectar drift, garantir compliance
-- [ ] Action: ferramentas de validação/observabilidade, simulação de drift, plano de governança
-- [ ] Result: demo do relatório apontando o drift, alertas e lições aprendidas
-- [ ] Link do vídeo no README
+- [x] ≤ 5 minutos (4:52)
+- [x] Situation: risco da degradação silenciosa
+- [x] Task: interceptar dados ruins, detectar drift, garantir compliance
+- [x] Action: ferramentas de validação/observabilidade, simulação de drift, plano de governança
+- [x] Result: demo do relatório apontando o drift, alertas e lições aprendidas
+- [x] Link do vídeo no README
 
 ## Repositório
 
