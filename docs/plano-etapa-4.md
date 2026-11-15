@@ -9,6 +9,12 @@
 > na nota: Governança (15%) e Vídeo (15%). Itens que não pontuam (CI, extras) só entram se
 > sobrar tempo. Ver a ordem de execução na seção 7.
 
+> ✅ **Execução (15/11/2026):** T4.1 a T4.6 e T0.6 concluídas. Dos problemas da seção 2,
+> os itens 1 a 6 e o 8 foram resolvidos (os itens 5 e 6 viraram as decisões D10 e D9). O que
+> resta: integrar as branches na `main` (item 7, via PR), gravar o vídeo e pôr o link no
+> README (T4.7) e conferir o vídeo na revisão final (T4.8). As seções abaixo guardam o
+> diagnóstico de antes da execução.
+
 ## 1. O que o enunciado exige
 
 **Etapa 4: Governança (Privacy by Design e by Default).** Foco: documentação
@@ -82,7 +88,7 @@ O que o vídeo precisa cobrir em cada parte (texto do enunciado):
    nunca aparece em claro. Decidir na auditoria da T4.1: pseudonimizar ou justificar.
 5. **`loan_intent = MEDICAL`** pode revelar informação de saúde, que é **dado sensível**
    (LGPD, art. 5º, II). Vale tratar explicitamente no inventário de PII.
-6. **`person_age` é feature do modelo** (1,4% da importância). Idade é atributo com risco
+6. **`person_age` é feature do modelo** (1,5% da importância). Idade é atributo com risco
    de discriminação, então precisa de medição de viés e justificativa.
 7. **`feat/step-2` e `feat/step-3` ainda não estão na `main`.** Só a Etapa 1 foi
    integrada.
@@ -211,8 +217,8 @@ medidas tomadas e propostas:
 2. **Causa → efeito observado,** com os números que já existem: features com drift
    (PSI/KS) por janela, deslocamento do score e queda de AUC.
 3. **Separar data drift de concept drift com os próprios dados:**
-   - de t1 a t3 só há data drift: AUC 0,924 → 0,891;
-   - de t3 a t5 entra o concept drift: AUC 0,891 → 0,801.
+   - de t1 a t3 só há data drift: AUC 0,929 → 0,892;
+   - de t3 a t5 entra o concept drift: AUC 0,892 → 0,806.
 4. **Correlação × causalidade:**
    - aqui sabemos a causa porque a simulação é uma intervenção controlada;
    - em produção, o monitoramento só vê associação. Confirmar a causa exigiria cruzar com
@@ -294,11 +300,11 @@ trocadas pelas setas do teclado:
 
 | Cena | Celular | Central de Risco |
 |---|---|---|
-| 1. Produção normal | cliente pede crédito e é aprovado em ~4 ms | KPIs, esteira (contrato → modelo → decisão), log só com hash, card de privacidade |
+| 1. Produção normal | cliente sorteado de t1 ao vivo ("Atualizar dados"); "Pedir análise" passa pelo contrato e pelo modelo (D17) | KPIs, esteira (contrato → modelo → decisão), log só com hash, card de privacidade |
 | 2. Lote inválido | notificação "Ingestão bloqueada" | regras violadas, exit code 1, modelo sem registros, lotes validados |
 | 3. A economia muda | termômetro da economia (parâmetros de t5) | features com drift por janela, curva de juros Referência × t5, PSI/KS por feature, cadeia causal |
-| 4. Degradação silenciosa | cliente continua aprovado, rápido e sem erro | saúde operacional verde × AUC caindo de 0,941 para 0,801 |
-| 5. Alertas | notificações críticas de t5 | os 8 alertas reais, alertas por janela, prescrição e atalhos para Evidently e Grafana |
+| 4. Degradação silenciosa | cliente de t5 aprovado com risco baixo e, uns 3 s depois, o aviso "6 meses depois: parcelas em atraso" (degradação forçada, D17) | saúde operacional verde × AUC caindo de 0,927 para 0,806 |
+| 5. Alertas | notificações críticas de t5 | os 9 alertas reais, alertas por janela, prescrição e atalhos para Evidently e Grafana |
 
 O que falta na página:
 
@@ -349,6 +355,11 @@ Conclusões:
 - **Situation é o cenário proposto pelo desafio** (a fintech, a economia mudando, a suspeita
   da diretoria e o risco da degradação silenciosa), não o estado do nosso projeto. O que
   construímos entra a partir da Action.
+- **Deixar claro, sem insistir, que o modelo é bom e a queda é simulada.** Sem esse
+  contexto, a cena 4 passa a impressão de um modelo fraco. Basta citar a AUC de 0,927 do
+  modelo base na A1 e chamar t5 de "crise simulada" no R1; a página já traz os mesmos
+  rótulos (cena 1: "baseline_v1 · AUC 0,927"; cena 4: "crise simulada" e "modelo base
+  0,927").
 - **A página de demonstração (W7) mostra; a evidência prova.** A página conduz as partes A
   e R, mas o vídeo também abre o terminal com o `exit code 1` e o HTML real do Evidently,
   que é o que o enunciado pede no Result.
@@ -362,12 +373,12 @@ Conclusões:
 | Abertura | 0:00–0:15 | slides 1–2 (capa e participantes) | tema do projeto; nomes e RMs ficam no slide, sem leitura em voz alta |
 | **S** | 0:15–0:45 | slide 3 | o cenário do desafio: fintech com Credit Scoring em produção; inflação e novos perfis de clientes; a diretoria suspeita de decisões erradas; risco de degradação silenciosa |
 | **T** | 0:45–1:05 | slide 4 | interceptar dados ruins · detectar drift (data + concept) · garantir compliance (LGPD, vieses) |
-| **A1** arquitetura | 1:05–1:30 | slide 5 → página, cena 1 | a camada de sustentação ponta a ponta; o modelo respondendo ao vivo; log só com hash |
+| **A1** arquitetura | 1:05–1:30 | slide 5 → página, cena 1 | a camada de sustentação ponta a ponta; o modelo respondendo ao vivo (citar de passagem a AUC de 0,927 do modelo base); log só com hash |
 | **A2** contrato | 1:30–1:50 | terminal → página, cena 2 | Pandera com regras rígidas; `validate_data.py --make-bad-batch` → **exit code 1** e regras violadas |
 | **A3** simulação | 1:50–2:15 | slide 6 → página, cena 3 | 4 features alteradas com justificativa econômica; concept drift em t4 e t5; seed fixa; PSI e KS do Evidently |
 | **A4** governança | 2:15–2:45 | slide 7 + README (governança) | pseudonimização, base legal (art. 7º, X e art. 20), retenção, fairness, cadeia causal |
-| **R1** drift | 2:45–3:25 | página, cena 4 → `drift_t5.html` | operação verde e decisão pior; features degradadas apontadas no Evidently; AUC 0,941 → 0,801 |
-| **R2** alertas | 3:25–3:45 | página, cena 5 (Grafana opcional) | `bad_batch` crítico; t3 em atenção; t4 e t5 críticos; prescrição |
+| **R1** drift | 2:45–3:25 | página, cena 4 → `drift_t5.html` | operação verde e decisão pior; features degradadas apontadas no Evidently; AUC 0,927 → 0,806 na crise que simulamos |
+| **R2** alertas | 3:25–3:45 | página, cena 5 (Grafana opcional) | `bad_batch` crítico; t3 crítica pelo data drift e em atenção pelo score; t4 e t5 críticos; prescrição |
 | **R3** lições | 3:45–4:15 | slide 10 | PSI × KS (renda só aparece no KS); KS sensível com amostras grandes, por isso o alerta usa a proporção de features; score como sinal antecipado do concept drift; governança desde o início |
 | Fechamento | 4:15–4:30 | slide 11 | próximos passos (retreino com rótulos recentes, renda deflacionada) e agradecimento |
 
@@ -383,7 +394,7 @@ Registrar as respostas no "Registro de decisões" de `context/01-arquitetura.md`
 | # | Decisão | Recomendação | Por quê |
 |---|---|---|---|
 | D8 | Base e grupos do relatório de vieses | holdout de 20% da Referência; faixa etária + `person_home_ownership`; alerta com razão < 0,8 | mesma base das métricas do baseline; grupos sugeridos no stub |
-| D9 | `person_age` no modelo | **manter** e documentar o risco e o resultado do fairness | retreinar sem idade refaria todas as evidências das Etapas 1–3; a importância é de 1,4% |
+| D9 | `person_age` no modelo | **manter** e documentar o risco e o resultado do fairness | retreinar sem idade refaria todas as evidências das Etapas 1–3; a importância é de 1,5% |
 | D10 | `loan_intent = MEDICAL` (possível dado de saúde) | manter, documentar como dado sensível e justificar a finalidade | é a finalidade do empréstimo, não um diagnóstico; remover mudaria o modelo |
 | D11 | Integração antes da Etapa 4 | PR `feat/step-3 → main` primeiro | evita a Etapa 4 nascer de uma branch não revisada |
 | D12 | Apresentação do vídeo | Vitor apresenta, com demos pré-gravadas | dono da Etapa 4 e único que ainda não apresentou |

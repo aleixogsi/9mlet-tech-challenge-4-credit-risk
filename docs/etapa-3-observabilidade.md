@@ -78,15 +78,15 @@ Porém, em um ambiente real de produção, ninguém abre dezenas de arquivos CSV
     - `blocked_batches_pct`: porcentagem de lotes barrados pelo contrato de qualidade Pandera.
     - `latency_p50_ms` e `latency_p95_ms`: tempo mediano (`p50`) e tempo nos 5% casos mais lentos (`p95`) para o modelo responder, em milissegundos (fica em torno de `~4,5 ms` a `5,1 ms`).
   - **Prediction Drift (Mudança nas decisões do modelo):**
-    - `mean_score`: risco médio de calote previsto pelo modelo (sobe de `0,214` em `t1` para `0,429` em `t5`).
-    - `approval_rate`: taxa de clientes aprovados (cai de `84,1%` em `t1` para `61,0%` em `t5` conforme a crise avança).
+    - `mean_score`: risco médio de calote previsto pelo modelo (sobe de `0,217` em `t1` para `0,443` em `t5`).
+    - `approval_rate`: taxa de clientes aprovados (cai de `84,0%` em `t1` para `59,4%` em `t5` conforme a crise avança).
     - `prediction_psi`: índice estatístico PSI que mede o quanto a distribuição dos scores mudou em relação à Referência.
   - **Data Drift (Mudança no perfil dos clientes):**
     - `n_drifted` e `share_drifted`: quantas (e qual `%`) das 11 variáveis de entrada mudaram de distribuição.
     - `drifted_features`: lista exata dos nomes das colunas que sofreram drift na janela.
   - **Performance / Concept Drift (Queda real da qualidade após chegar o rótulo):**
     - `auc`, `ks` e `gini`: métricas clássicas de poder de separação entre bons e maus pagadores.
-    - `auc_drop`: quanto a `AUC` caiu em relação à Referência (`0,941`).
+    - `auc_drop`: quanto a `AUC` caiu em relação à Referência (`0,927`).
 
 ---
 
@@ -101,15 +101,15 @@ Porém, em um ambiente real de produção, ninguém abre dezenas de arquivos CSV
   6. `latency` (`warning` / `critical`): quando a latência `p95` ultrapassa `200 ms`.
 - **A história que os alertas contam de `t1` a `t5`:**
   - **`bad_batch`**: dispara `contract_blocked` (`CRITICAL`) provando que dados sujos foram barrados na porta.
-  - **`t1` e `t2`**: **0 alertas**. A inflação inicial em `t2` ainda é absorvida sem degradar o modelo.
-  - **`t3`**: dispara `prediction_drift` (`WARNING`, PSI = `0,224`). **Destaque importante para o vídeo:** em `t3`, ainda não há *concept drift* e a queda de AUC (`-0,050`) ainda não cruzou o limite, mas o alerta de *Prediction Drift* já avisa a equipe precocemente que os scores estão subindo!
-  - **`t4` e `t5`**: disparam a tríade `data_drift` (`CRITICAL`, 36% das features), `prediction_drift` (`CRITICAL`, PSI > 0,62) e `performance_drop` (`WARNING` em `t4` com `-0,099` de AUC e `CRITICAL` em `t5` com `-0,140` de AUC), comprovando a degradação severa do modelo.
+  - **`t1` e `t2`**: **0 alertas** (18% e 27% das features com drift, abaixo de 30%). A inflação inicial em `t2` ainda é absorvida sem degradar o modelo.
+  - **`t3`**: dispara `data_drift` (`CRITICAL`, 36% das features) e `prediction_drift` (`WARNING`, PSI = `0,213`). **Destaque importante para o vídeo:** em `t3`, ainda não há *concept drift* e a queda de AUC (`-0,036`) ainda não cruzou o limite, mas os alertas de drift já avisam a equipe precocemente que os dados e os scores estão mudando!
+  - **`t4` e `t5`**: disparam a tríade `data_drift` (`CRITICAL`, 45% e 36% das features), `prediction_drift` (`CRITICAL`, PSI de `0,550` e `0,843`) e `performance_drop` (`WARNING` em `t4` com `-0,082` de AUC e `CRITICAL` em `t5` com `-0,121` de AUC), comprovando a degradação severa do modelo.
 
 ---
 
 ### 🖥️ `T3.4`, `T3.5` e `T3.6` — Painel HTML e Script Integrador (`dashboard.py` e `scripts/monitor.py`)
 - **O que é:** O gerador `build_dashboard()` cria `reports/monitoring/index.html`, uma página web limpa e responsiva com:
-  1. **4 Cards de KPIs no topo** (5 janelas / 25.000 predições, 8 alertas disparados, pico de 36,4% de data drift e menor AUC de 0,801).
+  1. **4 Cards de KPIs no topo** (5 janelas / 25.000 predições, 9 alertas disparados, pico de 45,5% de data drift e menor AUC de 0,806).
   2. **Tabela 1 — Saúde por Janela**, colorindo automaticamente cada célula de verde (`OK`), amarelo (`WARNING`) ou vermelho (`CRITICAL`).
   3. **Tabela 2 — Alertas Disparados**, detalhando severidade, métrica, valor observado vs. limite e mensagem explicativa.
   4. **Seção 3 — Central de Evidências**, com links clicáveis para todos os relatórios HTML do Evidently (`drift_t1..t5.html` e `performance_t1..t5.html`), tabelas `psi_ks_t1..t5.csv` e falhas do lote bloqueado (`bad_batch_failures.csv`).
