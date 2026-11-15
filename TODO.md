@@ -63,15 +63,15 @@ Cada etapa possui um único responsável. O status é controlado pelos checkboxe
 
 ## 🧭 Etapa 4 · Governança, documentação e entrega · Vitor
 
-- [ ] Documentar o tratamento de dados pessoais no README `T4.1`
-- [ ] Documentar base legal e retenção no README `T4.2`
-- [ ] Gerar relatório de vieses e documentar a mitigação `T4.3`
-- [ ] Documentar a análise causal da degradação `T4.4`
-- [ ] Documentar como executar o projeto e consultar as evidências `T4.5`
-- [ ] Escrever o roteiro do vídeo STAR `T4.6`
+- [x] Documentar o tratamento de dados pessoais no README `T4.1`
+- [x] Documentar base legal e retenção no README `T4.2`
+- [x] Gerar relatório de vieses e documentar a mitigação `T4.3`
+- [x] Documentar a análise causal da degradação `T4.4`
+- [x] Documentar como executar o projeto e consultar as evidências `T4.5`
+- [x] Escrever o roteiro do vídeo STAR `T4.6`
 - [ ] Gravar o vídeo STAR com até 5 minutos `T4.7`
-- [ ] Fazer a revisão final dos requisitos, README e vídeo `T4.8`
-- [ ] Configurar testes automáticos em cada Pull Request `T0.6`
+- [ ] Fazer a revisão final dos requisitos, README e vídeo `T4.8` (README e código revisados; falta conferir o vídeo)
+- [x] Configurar testes automáticos em cada Pull Request `T0.6`
 
 ## 🎁 Tarefas concluídas de preparação
 

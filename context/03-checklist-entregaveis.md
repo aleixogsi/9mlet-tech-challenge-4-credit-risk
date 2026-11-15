@@ -35,13 +35,15 @@ O peso entre parênteses é o do critério de avaliação.
 
 ## Etapa 4: Governança LGPD (15%), no `README.md`
 
-- [ ] Plano de proteção de dados: como a **PII** foi tratada
-- [ ] **Base legal** para a decisão de crédito
-- [ ] **Plano de retenção** de dados
-- [ ] **Mitigação de vieses**
-- [ ] **Análise causal** da degradação (causalidade)
+- [x] Plano de proteção de dados: como a **PII** foi tratada
+- [x] **Base legal** para a decisão de crédito
+- [x] **Plano de retenção** de dados
+- [x] **Mitigação de vieses**
+- [x] **Análise causal** da degradação (causalidade)
 
 ## Vídeo STAR (15%)
+
+Roteiro pronto em `docs/roteiro-video-star.md` (T4.6). Os itens abaixo dependem da gravação (T4.7).
 
 - [ ] ≤ 5 minutos
 - [ ] Situation: risco da degradação silenciosa
@@ -55,5 +57,5 @@ O peso entre parênteses é o do critério de avaliação.
 - [x] Pipeline de validação de dados configurado
 - [x] Scripts de simulação e detecção de drift
 - [x] Relatórios HTML gerados e versionados
-- [ ] Governança consolidada no `README.md`
+- [x] Governança consolidada no `README.md`
 - [x] Histórico de commits semântico e organizado

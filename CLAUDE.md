@@ -41,7 +41,7 @@ Leia sob demanda:
 - O contrato de dados **bloqueia** a ingestão (exceção ou exit code ≠ 0), com **≥ 3 regras rígidas**.
 - O drift simulado altera **≥ 2 features importantes**, cobre data drift **e** concept
   drift, é reprodutível (seed) e é medido com **PSI/KS**.
-- Relatórios HTML em `reports/` são entregáveis e **são versionados**. `data/` e `.env` **nunca**.
+- Relatórios HTML em `reports/` são entregáveis e **são versionados**. `data/` (exceto o CSV bruto CC0, D7) e `.env` **nunca**.
 - Sem PII em logs, commits ou relatórios.
 - Código em inglês. Docs, relatórios e commits em pt-BR.
 - **Commits semânticos** (Conventional Commits em pt-BR) são critério de avaliação.

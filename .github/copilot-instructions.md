@@ -56,7 +56,7 @@ Contexto complementar (consulte quando for relevante):
 - O drift simulado cobre data drift **e** concept drift, é reprodutível (seed fixa) e é
   medido com PSI/KS.
 - Caminhos, seeds e thresholds ficam em `src/credit_risk/config.py`. Nada de valores mágicos.
-- Relatórios HTML em `reports/` são versionados. `data/` e `.env` **nunca**.
+- Relatórios HTML em `reports/` são versionados. `data/` (exceto o CSV bruto CC0, D7) e `.env` **nunca**.
 - Sem PII em logs, commits ou relatórios.
 - Código em inglês. Docs, relatórios e mensagens de commit em pt-BR.
 - Python 3.11+, type hints, `ruff`, `pytest`, `logging` em vez de `print` em `src/`.
