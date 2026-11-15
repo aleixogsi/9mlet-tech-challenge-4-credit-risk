@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Vértice Crédito · Central de Risco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=block" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5l8 14 8-14" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="brand-name">vértice</div><div class="brand-sub">Central de Risco de Crédito</div></div>
+  </div>
+  <div class="top-mid">
+    <nav class="stepper" id="stepper"></nav>
+    <button class="next-btn" id="nextBtn" type="button" disabled onclick="goNext()"></button>
+  </div>
+  <div class="top-right" id="topRight"></div>
+</header>
+<main class="main">
+  <section class="stage" id="stage"></section>
+  <section class="console" id="console"></section>
+</main>
+
+<script src="data.js"></script>
+<script>
+// Página de demonstração do vídeo STAR. Layout e paleta aprovados em 15/11/2026.
+// Números: data.js (gerado por build_data.py a partir de reports/ e logs/ versionados).
+// Modo ao vivo: com serve.py rodando, a tabela da cena 1 mostra um lote fixo de predições do
+// modelo real (sem fluxo contínuo; R traz outro lote) e o celular das cenas 1 e 4 sorteia
+// clientes da simulação (ver "celular ao vivo").
+// Teclas: → avança (igual ao botão "Próxima etapa", só quando ele está liberado), ← volta,
+// R repete a animação da cena. ?cena=N abre direto; ?static=1 mostra o estado final sem animação.
+
+const STEPS = ["Produção normal", "Lote inválido", "A economia muda", "Degradação silenciosa", "Alertas"];
+const PARAMS = new URLSearchParams(location.search);
+const STATIC = PARAMS.has("static");
+if (STATIC) document.body.classList.add("static");
+
+const D = window.DEMO_DATA || null;
+const WIN = Object.fromEntries((D?.windows || []).map((w) => [w.window, w]));
+const FALLBACK_W = {
+  t1: { volume: 5000, approved: 4198, denied: 802, errors: 0, approval_rate: 0.840, latency_p50: 4.77, latency_p95: 5.65, n_drifted: 2, n_features: 11, share_drifted: 0.18, prediction_psi: 0.003, auc: 0.929 },
+  t2: { volume: 5000, approval_rate: 0.838, latency_p95: 4.78, n_drifted: 3, n_features: 11, share_drifted: 0.27, prediction_psi: 0.020, auc: 0.912, errors: 0 },
+  t3: { volume: 5000, approval_rate: 0.790, latency_p95: 4.55, n_drifted: 4, n_features: 11, share_drifted: 0.36, prediction_psi: 0.213, auc: 0.892, errors: 0 },
+  t4: { volume: 5000, approval_rate: 0.677, latency_p95: 5.27, n_drifted: 5, n_features: 11, share_drifted: 0.45, prediction_psi: 0.550, auc: 0.845, errors: 0 },
+  t5: { volume: 5000, approval_rate: 0.594, latency_p50: 4.35, latency_p95: 5.30, n_drifted: 4, n_features: 11, share_drifted: 0.36, prediction_psi: 0.843, auc: 0.806, errors: 0 },
+};
+const w = (name) => WIN[name] || FALLBACK_W[name];
+const WINDOWS = ["t1", "t2", "t3", "t4", "t5"];
+const AUC0 = D?.model?.auc ?? 0.927;
+const CONCEPT_T5 = D?.concept_t5 ?? 7.8; // % dos rótulos de t5 trocados pelo concept drift (build_data.py)
+
+let LIVE = false;
+let current = Math.min(Math.max(parseInt(PARAMS.get("cena") || "1", 10) - 1, 0), STEPS.length - 1);
+
+// ---- utilidades -------------------------------------------------------------------
+const nf = (v, d = 0) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmt = (v, d = 3) => nf(v, d);
+const $ = (s, r = document) => r.querySelector(s);
+const $all = (s, r = document) => [...r.querySelectorAll(s)];
+const cnt = (v, d = 0, suffix = "", from = 0, delay = 0) =>
+  `<span data-count="${v}" data-dec="${d}" data-from="${from}" data-delay="${delay}" data-suffix='${suffix}'>${nf(v, d)}${suffix}</span>`;
+const shortId = (h) => `${h.slice(0, 8)}…${h.slice(-4)}`;
+
+let timers = [];
+const later = (ms, fn) => { if (STATIC) { fn(); return; } timers.push(setTimeout(fn, ms)); };
+const clearTimers = () => { timers.forEach((t) => { clearTimeout(t); clearInterval(t); }); timers = []; };
+
+function stagger(els, cls = "rise", start = 0, step = 90) {
+  els.forEach((el, i) => { el.style.setProperty("--d", `${start + i * step}ms`); el.classList.add(cls); });
+}
+
+function countUp(el) {
+  const to = parseFloat(el.dataset.count), from = parseFloat(el.dataset.from || "0");
+  const dec = parseInt(el.dataset.dec || "0", 10), delay = parseInt(el.dataset.delay || "0", 10);
+  const suffix = el.dataset.suffix || "";
+  const set = (v) => { el.innerHTML = nf(v, dec) + suffix; };
+  if (STATIC) { set(to); return; }
+  set(from);
+  later(delay, () => {
+    const t0 = performance.now(), dur = 1200;
+    const tick = (now) => {
+      const p = Math.min((now - t0) / dur, 1);
+      set(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+function growBars(root, start = 300, step = 70) {
+  if (STATIC) return;
+  $all(".bar > span", root).forEach((s, i) => {
+    const target = s.style.width;
+    s.style.width = "0";
+    later(start + i * step, () => { s.style.width = target; });
+  });
+}
+
+// ---- peças da tela ----------------------------------------------------------------
+function statusBar(light = false) {
+  return `<div class="status${light ? " light" : ""}"><span>9:41</span><span><i class="ti ti-antenna-bars-5"></i><i class="ti ti-wifi"></i><i class="ti ti-battery-3"></i></span></div>`;
+}
+
+function tabbar(active) {
+  const tabs = [["ti-home", "Início"], ["ti-credit-card", "Cartões"], ["ti-cash", "Crédito"], ["ti-user", "Perfil"]];
+  return `<div class="tabbar">${tabs.map(([ic, t]) => `<div class="${t === active ? "on" : ""}"><i class="ti ${ic}"></i>${t}</div>`).join("")}</div>`;
+}
+
+function loanApp() {
+  const p = FALLBACK_CLIENT.profile;
+  return `${statusBar()}
+  <div class="app">
+    <div class="app-head"><div><div class="app-hello" id="phHello">${clientLine(p)}</div><div class="app-title">Empréstimo pessoal</div></div><div class="icon-btn"><i class="ti ti-bell"></i></div></div>
+    <div class="m-card ph-swap"><div class="m-head"><div class="m-label">Quanto você precisa?</div><span class="m-rate" id="phRate">${nf(p.int_rate, 1)}% a.a.</span></div><div class="m-value" id="phAmount">${brl(p.amount)}</div><div class="slider" id="phSlider"><span></span><b></b></div></div>
+    <div class="m-row ph-swap"><div class="m-mini"><span class="m-label">Renda anual</span><b id="phIncome">${brl(p.income)}</b></div><div class="m-mini"><span class="m-label">Finalidade</span><b id="phIntent">${p.intent}</b></div></div>
+    <div class="result idle" id="phoneResult">${resultInner("ti-file-description", "Proposta pronta", "Toque em Pedir análise")}</div>
+    <div class="m-card phone-detail wait" style="padding:4px 14px">
+      ${[["ti-shield-check", "Dados validados", `<i class="ti ti-check" id="phContract" style="color:var(--mint);font-size:16px"></i>`], ["ti-gauge", "Nível de risco", `<b id="phRisk" style="color:var(--ink)">…</b>`], ["ti-chart-dots", "Score do modelo", `<b id="phScore" style="color:var(--ink)">…</b>`]]
+        .map(([ic, t, v], i) => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;font-weight:600;color:var(--text);${i ? "border-top:1px solid var(--line)" : ""}"><i class="ti ${ic}" style="color:var(--brand);font-size:16px"></i><span style="flex:1">${t}</span>${v}</div>`).join("")}
+    </div>
+    <div class="cta-row"><button class="cta ghost" id="phRefresh" type="button"><i class="ti ti-refresh"></i>Atualizar dados</button><button class="cta" id="phAnalyze" type="button">Pedir análise</button></div>
+  </div>
+  <div class="notif crit push" id="phPush">
+    <div class="app-ic"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 5l8 14 8-14" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="meta"><span>vértice · 6 meses depois</span><span>agora</span></div><h5>Parcelas em atraso</h5><p id="phPushText"></p></div>
+  </div>
+  ${tabbar("Crédito")}`;
+}
+
+// ---- celular ao vivo --------------------------------------------------------------
+// Com serve.py, cada "Atualizar dados" sorteia um cliente da simulação de drift (sem seed)
+// e "Pedir análise" passa esse cliente pelo contrato e pelo modelo real. Na cena 1 o cliente
+// vem da janela t1 (controle). Na cena 4 a degradação silenciosa é forçada: o sorteio fica
+// entre os bons pagadores de t5 que o modelo aprova com risco baixo e que, pela regra de
+// concept drift da simulação, deixam de pagar. Sem servidor, o celular usa o cliente abaixo.
+const FALLBACK_CLIENT = { token: null, profile: { age: 29, income: 60000, emp_length: 4, amount: 8000, int_rate: 11.0, intent: "Educação" } };
+const MAX_LOAN = 35000; // maior empréstimo da base: escala do slider
+const brl = (v) => `R$ ${nf(v)}`;
+const years = (v) => (v < 1 ? "menos de 1 ano" : v === 1 ? "1 ano" : `${nf(v, v % 1 ? 1 : 0)} anos`);
+const clientLine = (p) => `${p.age} anos · ${years(p.emp_length)} de emprego`;
+const resultInner = (icon, title, text) => `<div class="ic"><i class="ti ${icon}"></i></div><div><h4>${title}</h4><p>${text}</p></div>`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+let renderId = 0;
+let phone = null;
+
+function setResult(cls, icon, title, text) {
+  const r = $("#phoneResult");
+  if (!r) return;
+  r.className = `result ${cls}`;
+  r.innerHTML = resultInner(icon, title, text);
+}
+
+function phoneButtons(disabled) {
+  $all(".cta-row .cta").forEach((b) => { b.disabled = disabled; });
+}
+
+function phoneShowClient(p, animate) {
+  $("#phHello").textContent = clientLine(p);
+  $("#phRate").textContent = `${nf(p.int_rate, 1)}% a.a.`;
+  $("#phAmount").textContent = brl(p.amount);
+  $("#phIncome").textContent = brl(p.income);
+  $("#phIntent").textContent = p.intent;
+  const pos = `${Math.min(Math.max(p.amount / MAX_LOAN, 0.06), 1) * 100}%`;
+  $("#phSlider span").style.width = pos;
+  $("#phSlider b").style.left = pos;
+  if (animate) $all(".ph-swap").forEach((e) => { e.classList.remove("swap"); void e.offsetWidth; e.classList.add("swap"); });
+}
+
+async function phoneLoad(animate = true) {
+  const ph = phone, rid = renderId;
+  if (!ph || ph.busy) return;
+  ph.busy = true;
+  phoneButtons(true);
+  setResult("idle", "ti-file-description", "Proposta pronta", "Toque em Pedir análise");
+  $(".phone-detail")?.classList.add("wait");
+  $("#phPush")?.classList.remove("on");
+  let client = FALLBACK_CLIENT;
+  if (LIVE) {
+    try {
+      const r = await fetch(`/api/cliente?window=${ph.window}${ph.silent ? "&silent=1" : ""}`, { cache: "no-store" });
+      if (r.ok) client = await r.json();
+    } catch { /* fica com o cliente de reserva */ }
+  }
+  if (rid !== renderId) return;
+  ph.client = client;
+  phoneShowClient(client.profile, animate);
+  ph.busy = false;
+  phoneButtons(false);
+}
+
+function fallbackResult(ph) {
+  return { contract: "passed", decision: "approved", risk: "Baixo", score: ph.silent ? 0.12 : 0.06, latency_ms: w(ph.window).latency_p50 ?? 4.5,
+    outcome: { defaulted: ph.silent, concept_drift: ph.silent, fraction: 0.3 } };
+}
+
+async function phoneAnalyze() {
+  const ph = phone, rid = renderId;
+  if (!ph || ph.busy || !ph.client) return;
+  ph.busy = true;
+  phoneButtons(true);
+  $("#phPush")?.classList.remove("on");
+  $(".phone-detail")?.classList.add("wait");
+  setResult("pending", "ti-loader-2", "Analisando…", "Validando dados e risco");
+  const t0 = performance.now();
+  let res = null;
+  if (LIVE && ph.client.token) {
+    try {
+      const r = await fetch(`/api/analisar?token=${ph.client.token}`, { cache: "no-store" });
+      if (r.ok) res = await r.json();
+    } catch { /* cai na reserva */ }
+  }
+  res ||= fallbackResult(ph);
+  if (!STATIC) await sleep(Math.max(0, 700 - (performance.now() - t0))); // deixa o "analisando" aparecer
+  if (rid !== renderId) return;
+  phoneShowDecision(res);
+  ph.busy = false;
+  phoneButtons(false);
+  if (ph.silent && res.decision === "approved" && res.outcome?.defaulted) later(2600, () => phonePush(res));
+}
+
+function phoneShowDecision(res) {
+  const detail = $(".phone-detail");
+  if (res.contract === "blocked") {
+    setResult("bad", "ti-shield-x", "Proposta recusada", "Barrada pelo contrato");
+    $("#phContract").className = "ti ti-x";
+    $("#phContract").style.color = "var(--risk)";
+    $("#phRisk").textContent = "—";
+    $("#phScore").textContent = "—";
+  } else {
+    const ok = res.decision === "approved";
+    setResult(ok ? "ok" : "bad", ok ? "ti-check" : "ti-x", ok ? "Crédito aprovado" : "Crédito negado", `Análise concluída em ${nf(res.latency_ms, 1)} ms`);
+    $("#phRisk").textContent = res.risk;
+    $("#phRisk").style.color = res.risk === "Alto" ? "var(--risk)" : res.risk === "Moderado" ? "var(--warn)" : "var(--mint)";
+    $("#phScore").textContent = fmt(res.score);
+  }
+  detail?.classList.remove("wait");
+}
+
+function phonePush(res) {
+  const n = Math.round((res.outcome.fraction ?? 0.3) * 10);
+  $("#phPushText").textContent = `Aprovado com risco ${res.risk.toLowerCase()}, mas na crise ${n} em cada 10 bons pagadores com esse perfil deixaram de pagar.`;
+  $("#phPush")?.classList.add("on");
+  if (current === 3) setNext(true, true); // cena 4: o aviso de inadimplência libera a próxima etapa
+}
+
+
+async function phoneStart(window, silent) {
+  phone = { window, silent, client: null, busy: false };
+  $("#phRefresh")?.addEventListener("click", () => phoneLoad());
+  $("#phAnalyze")?.addEventListener("click", () => phoneAnalyze());
+  await phoneLoad(false);
+  if (STATIC) await phoneAnalyze();
+}
+
+function economyApp() {
+  const items = [
+    ["ti-percentage", "Juros dos empréstimos", "+5 p.p.", "bad", "subiu"],
+    ["ti-coin", "Renda nominal", "×1,30", "warn", "inflação"],
+    ["ti-receipt", "Empréstimo sobre a renda", "+0,08", "bad", "subiu"],
+    ["ti-briefcase", "Tempo de emprego", "×0,5", "bad", "menor"],
+  ];
+  return `${statusBar()}
+  <div class="app" style="gap:10px">
+    <div class="app-head"><div><div class="app-hello">Janela t5 · crise</div><div class="app-title">Termômetro da economia</div></div><div class="icon-btn"><i class="ti ti-chart-line"></i></div></div>
+    ${items.map(([ic, l, v, c, t]) => `
+      <div class="m-card eco" style="display:flex;align-items:center;gap:11px;padding:12px">
+        <div style="width:38px;height:38px;border-radius:12px;background:#eef1fb;color:var(--brand);display:grid;place-items:center;font-size:19px"><i class="ti ${ic}"></i></div>
+        <div style="flex:1"><div class="m-label">${l}</div><div style="font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.02em">${v}</div></div>
+        <span class="chip ${c}">${t}</span>
+      </div>`).join("")}
+    <div style="font-size:11px;color:var(--muted);text-align:center;font-weight:600;margin-top:2px">Cenário simulado e reprodutível · seed 42</div>
+  </div>
+  ${tabbar("Início")}`;
+}
+
+function lockScreen(time, notifs) {
+  return `${statusBar(true)}
+  <div class="lock-time">${time}</div>
+  <div class="lock-date">terça-feira, 10 de novembro</div>
+  <div class="notifs">${notifs.map((n) => `
+    <div class="notif ${n.crit ? "crit" : ""}" style="${n.dim ? "--o:.72;opacity:.72" : ""}">
+      <div class="app-ic"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 5l8 14 8-14" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="meta"><span>Central de Risco</span><span>${n.when}</span></div><h5>${n.title}</h5><p>${n.body}</p></div>
+    </div>`).join("")}
+  </div>
+  <div class="lock-actions"><span><i class="ti ti-bulb"></i></span><span><i class="ti ti-camera"></i></span></div>`;
+}
+
+function stage(label, icon, screen, note, lock = false) {
+  return `<div class="stage-label"><i class="ti ${icon}"></i>${label}</div>
+    <div class="phone"><div class="screen ${lock ? "lock" : ""}"><div class="island"></div>${screen}</div></div>
+    <div class="stage-note">${note}</div>`;
+}
+
+function kpi(icon, label, value, chip) {
+  return `<div class="card kpi"><div class="lbl"><i class="ti ${icon}"></i>${label}</div><div class="val">${value}</div><div class="foot">${chip}</div></div>`;
+}
+
+function node(cls, icon, title, sub, count) {
+  return `<div class="node ${cls}"><div class="ic"><i class="ti ${icon}"></i></div><h6>${title}</h6><p>${sub}</p><div class="count">${count}</div></div>`;
+}
+const arrow = `<div class="arrow"><i class="ti ti-chevron-right"></i></div>`;
+
+function scoreBar(s) {
+  const c = s < 0.5 ? "var(--mint)" : "var(--risk)";
+  return `<div style="display:flex;align-items:center;gap:10px"><div class="bar" style="flex:1"><span style="width:${Math.max(s * 100, 3)}%;background:${c}"></span></div><b style="font-size:12.5px;color:var(--ink);width:38px">${fmt(s)}</b></div>`;
+}
+
+function predRow(p) {
+  const ok = p.decision === "approved";
+  return `<tr><td class="mono" style="font-size:12px;color:var(--muted)">${p.id}</td><td>${scoreBar(p.score)}</td><td>${ok ? `<span class="chip ok">Aprovada</span>` : `<span class="chip bad">Negada</span>`}</td><td style="font-weight:600">${nf(p.latency, 1)} ms</td></tr>`;
+}
+
+// Histograma real de loan_int_rate (ou curvas ilustrativas se data/ não existia).
+function rateData() {
+  if (D?.rate_hist) return D.rate_hist;
+  const edges = Array.from({ length: 24 }, (_, i) => 5 + i);
+  const g = (m, s) => {
+    const raw = edges.slice(0, -1).map((e) => Math.exp(-0.5 * ((e + 0.5 - m) / s) ** 2));
+    const tot = raw.reduce((a, b) => a + b, 0);
+    return { density: raw.map((v) => v / tot), mean: m };
+  };
+  return { edges, reference: g(11, 3), t1: g(11.06, 3), t2: g(11.84, 3), t3: g(13.59, 3.2), t4: g(15.09, 3.3), t5: g(16.09, 3.4) };
+}
+
+const RATE = { W: 560, H: 290 };
+// Suavização leve (média ponderada 1-2-1) só para a leitura visual; a forma é a dos dados.
+const smooth = (a) => a.map((v, i) => ((a[i - 1] ?? v) + 2 * v + (a[i + 1] ?? v)) / 4);
+const rateYmax = () => { const R = rateData(); return Math.max(...["reference", ...WINDOWS].map((k) => Math.max(...smooth(R[k].density)))) * 1.08; };
+function curve(points, base) {
+  let d = `M${points[0][0].toFixed(1)},${points[0][1].toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i], p1 = points[i], p2 = points[i + 1], p3 = points[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, Math.min(p1[1] + (p2[1] - p0[1]) / 6, base)];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, Math.min(p2[1] - (p3[1] - p1[1]) / 6, base)];
+    d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+function ratePaths(density, ymax) {
+  const R = rateData(), { W, H } = RATE, base = H - 40, amp = H - 90;
+  const x0 = R.edges[0], x1 = R.edges[R.edges.length - 1];
+  const toX = (v) => 36 + ((v - x0) / (x1 - x0)) * (W - 56);
+  const pts = [[toX(x0), base], ...smooth(density).map((d, i) => [toX(R.edges[i] + 0.5), base - (d / ymax) * amp]), [toX(x1), base]];
+  const line = curve(pts, base);
+  return { line, area: `${line} Z`, toX, base };
+}
+
+function rateChart() {
+  const R = rateData(), { W, H } = RATE;
+  const ymax = rateYmax();
+  const ref = ratePaths(R.reference.density, ymax), prod = ratePaths(R.t5.density, ymax);
+  const { toX, base } = ref, amp = H - 90;
+  const ticks = [5, 10, 15, 20, 25];
+  const tr = "transition:d .6s cubic-bezier(.2,.8,.2,1)";
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">
+    ${[0, 1, 2, 3].map((k) => base - (k * amp) / 3).map((y) => `<line x1="36" x2="${W - 20}" y1="${y}" y2="${y}" stroke="#eef0f6"/>`).join("")}
+    <path d="${ref.area}" fill="rgba(25,53,177,.12)"/>
+    <path d="${ref.line}" fill="none" stroke="#1935b1" stroke-width="2.5" stroke-linejoin="round"/>
+    <path id="rateProdArea" d="${prod.area}" fill="rgba(227,23,91,.12)" style="${tr}"/>
+    <path id="rateProdLine" d="${prod.line}" fill="none" stroke="#e3175b" stroke-width="2.5" stroke-linejoin="round" style="${tr}"/>
+    <line x1="${toX(R.reference.mean)}" x2="${toX(R.reference.mean)}" y1="${base - amp - 6}" y2="${base}" stroke="#1935b1" stroke-dasharray="4 4" opacity=".55"/>
+    <line id="rateProdMean" x1="${toX(R.t5.mean)}" x2="${toX(R.t5.mean)}" y1="${base - amp - 6}" y2="${base}" stroke="#e3175b" stroke-dasharray="4 4" opacity=".55" style="transition:all .6s"/>
+    <g font-family="Plus Jakarta Sans, Segoe UI" font-size="12" font-weight="700">
+      <text x="${toX(R.reference.mean) - 8}" y="${base - amp + 4}" text-anchor="end" fill="#1935b1">média ${nf(R.reference.mean, 1)}%</text>
+      <g id="rateBadge" style="transition:transform .6s" transform="translate(${toX(R.t5.mean) + 10},${base - amp - 10})">
+        <rect width="118" height="26" rx="13" fill="#fde8ef"/>
+        <text id="rateBadgeText" x="59" y="17" text-anchor="middle" fill="#e3175b">t5 · média ${nf(R.t5.mean, 1)}%</text>
+      </g>
+    </g>
+    ${ticks.map((t) => `<text x="${toX(t)}" y="${H - 14}" text-anchor="middle" font-size="12" fill="#6b7591" font-family="Plus Jakarta Sans, Segoe UI">${t}%</text>`).join("")}
+  </svg>`;
+}
+
+function showRateWindow(name) {
+  const R = rateData();
+  const ymax = rateYmax();
+  const p = ratePaths(R[name].density, ymax), amp = RATE.H - 90;
+  $("#rateProdArea")?.setAttribute("d", p.area);
+  $("#rateProdLine")?.setAttribute("d", p.line);
+  const x = p.toX(R[name].mean);
+  $("#rateProdMean")?.setAttribute("x1", x);
+  $("#rateProdMean")?.setAttribute("x2", x);
+  $("#rateBadge")?.setAttribute("transform", `translate(${x + 10},${p.base - amp - 10})`);
+  if ($("#rateBadgeText")) $("#rateBadgeText").textContent = `${name} · média ${nf(R[name].mean, 1)}%`;
+  if ($("#rateWin")) $("#rateWin").textContent = `loan_int_rate · referência × produção ${name}`;
+}
+
+function aucChart(H = 330) {
+  const pts = [["Ref.", AUC0], ...WINDOWS.map((n) => [n, w(n).auc])];
+  const W = 560, top = 30, bot = H - 40, lo = 0.78, hi = 0.96;
+  const toX = (i) => 70 + i * ((W - 100) / 5);
+  const toY = (v) => top + ((hi - v) / (hi - lo)) * (bot - top);
+  const line = pts.map(([, v], i) => `${toX(i)},${toY(v).toFixed(1)}`).join(" ");
+  const area = `M${toX(0)},${bot} L${pts.map(([, v], i) => `${toX(i)},${toY(v).toFixed(1)}`).join(" L")} L${toX(5)},${bot} Z`;
+  const limY = toY(AUC0 - 0.05);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">
+    <defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e3175b" stop-opacity=".18"/><stop offset="1" stop-color="#e3175b" stop-opacity="0"/></linearGradient></defs>
+    ${[0.8, 0.85, 0.9, 0.95].map((v) => `<line x1="40" x2="${W - 20}" y1="${toY(v)}" y2="${toY(v)}" stroke="#eef0f6"/><text x="30" y="${toY(v) + 4}" text-anchor="end" font-size="11" fill="#9aa3bb" font-family="Plus Jakarta Sans, Segoe UI">${fmt(v, 2)}</text>`).join("")}
+    <line x1="40" x2="${W - 20}" y1="${limY}" y2="${limY}" stroke="#8a47c4" stroke-dasharray="5 5"/>
+    <text x="${W - 20}" y="${limY - 7}" text-anchor="end" font-size="11.5" font-weight="700" fill="#8a47c4" font-family="Plus Jakarta Sans, Segoe UI">limite: queda de 0,05</text>
+    <path id="aucArea" class="svg-fade" d="${area}" fill="url(#ga)" style="transition:opacity 1s"/>
+    <polyline id="aucLine" points="${line}" fill="none" stroke="#e3175b" stroke-width="3" stroke-linejoin="round"/>
+    ${pts.map(([l, v], i) => `
+      <g class="svg-fade auc-pt">
+      <circle cx="${toX(i)}" cy="${toY(v)}" r="${i === 5 ? 6.5 : 4.5}" fill="#fff" stroke="${v < 0.85 ? "#e3175b" : "#1935b1"}" stroke-width="3"/>
+      <text x="${toX(i)}" y="${toY(v) - 13}" text-anchor="middle" font-size="12" font-weight="800" fill="${v < 0.85 ? "#e3175b" : "#0f1a3a"}" font-family="Plus Jakarta Sans, Segoe UI">${fmt(v)}</text></g>
+      <text x="${toX(i)}" y="${H - 8}" text-anchor="middle" font-size="12" font-weight="600" fill="#6b7591" font-family="Plus Jakarta Sans, Segoe UI">${l}</text>`).join("")}
+  </svg>`;
+}
+
+function spark(vals) {
+  const lo = 0, hi = Math.max(...vals, 1) * 1.6, span = hi - lo;
+  const y = (v) => (hi === lo ? 26 : 40 - ((v - lo) / span) * 26).toFixed(1);
+  const pts = vals.map((v, i) => `${8 + i * 46},${y(v)}`).join(" ");
+  return `<div><svg viewBox="0 0 200 56" width="100%" style="display:block"><polyline points="${pts}" fill="none" stroke="#0aa776" stroke-width="2.5" stroke-linejoin="round"/>${vals.map((v, i) => `<circle cx="${8 + i * 46}" cy="${y(v)}" r="3" fill="#fff" stroke="#0aa776" stroke-width="2"/>`).join("")}</svg><div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;color:#7fb8a2;padding:0 2px">${WINDOWS.map((n) => `<span>${n}</span>`).join("")}</div></div>`;
+}
+
+// ---- dados derivados --------------------------------------------------------------
+const VALIDATION = (() => {
+  const order = ["reference", "bad_batch", ...WINDOWS];
+  const last = {};
+  (D?.validation || []).forEach((v) => { last[v.batch_name] = v; });
+  const fallback = { reference: [17098, "passed"], bad_batch: [17098, "blocked", 8] };
+  return order.map((b) => last[b] || { batch_name: b, rows: fallback[b]?.[0] ?? 5000, status: fallback[b]?.[1] ?? "passed", n_failures: fallback[b]?.[2] ?? 0 });
+})();
+const BAD = VALIDATION.find((v) => v.batch_name === "bad_batch");
+
+const ALERTS = D?.alerts || [
+  { window: "bad_batch", type: "contract_blocked", value: 1, threshold: 0, severity: "critical" },
+  { window: "t3", type: "data_drift", value: 0.364, threshold: 0.3, severity: "critical" },
+  { window: "t3", type: "prediction_drift", value: 0.213, threshold: 0.1, severity: "warning" },
+  { window: "t4", type: "data_drift", value: 0.455, threshold: 0.3, severity: "critical" },
+  { window: "t4", type: "prediction_drift", value: 0.55, threshold: 0.25, severity: "critical" },
+  { window: "t4", type: "performance_drop", value: 0.082, threshold: 0.05, severity: "warning" },
+  { window: "t5", type: "data_drift", value: 0.364, threshold: 0.3, severity: "critical" },
+  { window: "t5", type: "prediction_drift", value: 0.843, threshold: 0.25, severity: "critical" },
+  { window: "t5", type: "performance_drop", value: 0.121, threshold: 0.05, severity: "critical" },
+];
+function alertText(a) {
+  const crit = a.severity === "critical";
+  switch (a.type) {
+    case "contract_blocked": return ["Contrato bloqueou o lote", `${BAD.n_failures} violações`];
+    case "prediction_drift": return [crit ? "Drift do score crítico" : "Drift do score em atenção", `PSI ${fmt(a.value)} · limite ${fmt(a.threshold, 2)}`];
+    case "data_drift": return [`${Math.round(a.value * 100)}% das features com drift`, `limite ${Math.round(a.threshold * 100)}%`];
+    case "performance_drop": return ["Queda de AUC", `${fmt(a.value)} · limite ${fmt(a.threshold, 2)}`];
+    default: return [a.type, fmt(a.value)];
+  }
+}
+
+let sampleIdx = 0;
+async function nextPrediction() {
+  if (LIVE) {
+    try {
+      const p = await (await fetch("/api/predict?window=t1", { cache: "no-store" })).json();
+      return { id: shortId(p.record_id), score: p.score, decision: p.decision, latency: p.latency_ms };
+    } catch { /* cai no replay */ }
+  }
+  const sample = D?.sample?.t1 || [{ id: "cf79036e…6b67", score: 0.007, decision: "approved", latency: 4.4 }];
+  return sample[sampleIdx++ % sample.length];
+}
+
+// ---- botão "Testar lote com erro" (D18) --------------------------------------------
+// Com o serve.py, roda o mesmo comando do terminal (validate_data.py --make-bad-batch) e
+// mostra a saída real num terminal dentro da página. O terminal fica na tela e o botão
+// "Próxima etapa" é liberado; a cena 2 só abre no clique.
+// Sem o servidor, repete a execução registrada no log ("replay do log").
+const CONTRACT_CMD = "python scripts/validate_data.py --make-bad-batch";
+let CONTRACT = null;
+let contractBusy = false;
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function replayContract() {
+  return {
+    command: CONTRACT_CMD,
+    lines: ["ERROR __main__: Lote 'bad_batch' bloqueado: violou o contrato de dados"],
+    exit_code: 1,
+    elapsed_ms: null,
+    record: null,
+  };
+}
+
+async function runContract() {
+  if (contractBusy || current !== 0) return null;
+  contractBusy = true;
+  const id = renderId;
+  $("#badBatchBtn")?.setAttribute("disabled", "");
+  const host = $("#console .grow");
+  host.style.position = "relative";
+  host.insertAdjacentHTML("beforeend", `<div class="term"><div class="term-bar"><span class="term-dots"><i></i><i></i><i></i></span><span>Terminal · contrato de dados</span><span class="term-tag">${LIVE ? "ao vivo · serve.py" : "replay do log"}</span></div><div class="term-body mono" id="termBody"><div><span class="ps">PS credit-risk&gt;</span> <span id="termCmd"></span><span class="caret" id="termCaret"></span></div></div></div>`);
+  const body = $("#termBody");
+  const cmd = $("#termCmd");
+  const alive = () => renderId === id && body.isConnected;
+  const started = performance.now();
+  const request = LIVE
+    ? fetch("/api/contrato", { method: "POST", cache: "no-store" }).then((r) => r.json()).catch(() => ({ error: true }))
+    : Promise.resolve(replayContract());
+  if (STATIC) cmd.textContent = CONTRACT_CMD;
+  else for (const ch of CONTRACT_CMD) { if (!alive()) break; cmd.textContent += ch; await sleep(14); }
+  if (alive() && !STATIC) body.insertAdjacentHTML("beforeend", `<div class="term-wait" id="termWait"><i class="ti ti-loader-2"></i> validando o lote pelo contrato…</div>`);
+  let result = await request;
+  if (result.error) result = replayContract();
+  if (!STATIC) await sleep(Math.max(0, 900 - (performance.now() - started)));
+  CONTRACT = result;
+  contractBusy = false;
+  if (!alive()) return result;
+  $("#termCaret")?.remove();
+  $("#termWait")?.remove();
+  for (const line of result.lines) {
+    body.insertAdjacentHTML("beforeend", `<div class="${line.includes("ERROR") ? "err" : ""}">${esc(line)}</div>`);
+    if (!STATIC) await sleep(160);
+  }
+  const secs = result.elapsed_ms != null ? ` <span class="dim">· ${nf(result.elapsed_ms / 1000, 1)} s</span>` : "";
+  body.insertAdjacentHTML("beforeend", `<div class="term-exit">exit code: ${result.exit_code}${secs}</div>`);
+  const rec = result.record;
+  if (rec) body.insertAdjacentHTML("beforeend", `<div class="dim">logs/validation.jsonl ← "status": "${esc(rec.status)}", "n_failures": ${rec.n_failures}</div>`);
+  $all(".flow > .node.ok").forEach((n) => { n.classList.remove("ok"); n.classList.add("bad", "pulse-risk"); });
+  setNext(true, true);
+  return result;
+}
+window.runContract = runContract;
+
+// ---- botão "Próxima etapa" ----------------------------------------------------------
+// A troca de cena é sempre manual. Cenas com ação ao vivo (gate) só liberam o botão depois
+// dela: cena 1, depois do "Testar lote com erro"; cena 4, depois do aviso no celular.
+let nextReady = false;
+
+function setNext(ready, nudge = false) {
+  const last = current >= SCENES.length - 1;
+  nextReady = ready && !last;
+  const b = $("#nextBtn");
+  if (!b) return;
+  b.disabled = !nextReady;
+  b.classList.toggle("ready", nextReady);
+  b.classList.remove("nudge");
+  b.innerHTML = last
+    ? `<i class="ti ti-flag"></i>Última etapa`
+    : nextReady
+      ? `Próxima etapa<i class="ti ti-arrow-right"></i>`
+      : `<i class="ti ti-lock"></i>Próxima etapa`;
+  b.title = last ? "" : nextReady ? "Ir para a próxima etapa" : "Faça a ação desta etapa para liberar";
+  if (nextReady && nudge && !STATIC) { void b.offsetWidth; b.classList.add("nudge"); }
+}
+
+function goNext() {
+  if (!nextReady) return false;
+  current += 1;
+  render(current);
+  return true;
+}
+window.goNext = goNext;
+
+// ---- cenas ------------------------------------------------------------------------
+const SCENES = [
+  // 1. Produção normal ---------------------------------------------------------------
+  () => {
+    const t1 = w("t1");
+    const mode = LIVE ? "ao vivo" : "replay dos logs";
+    return {
+      gate: true, // libera "Próxima etapa" só depois do "Testar lote com erro"
+      top: `<span class="pill"><span class="live-dot"></span>baseline_v1 · ${mode}</span><span class="pill">Janela t1</span><span class="avatar">RT</span>`,
+      stage: stage("App do cliente", "ti-device-mobile", loanApp(), "O cliente pede o crédito e recebe a resposta na hora."),
+      console: `
+      <div class="kpis">
+        ${kpi("ti-files", "Propostas na janela", cnt(t1.volume), `<span class="chip neutral">janela t1</span>`)}
+        ${kpi("ti-bolt", "Latência p50", cnt(t1.latency_p50, 1, "<small>ms</small>"), `<span class="chip ok"><i class="ti ti-check"></i>p95 ${nf(t1.latency_p95, 1)} ms</span>`)}
+        ${kpi("ti-circle-check", "Taxa de aprovação", cnt(t1.approval_rate * 100, 1, "<small>%</small>"), `<span class="chip ok">${nf(t1.approved)} aprovadas</span>`)}
+        ${kpi("ti-alert-octagon", "Predições com erro", cnt(t1.errors), `<span class="chip ok"><i class="ti ti-check"></i>${nf((t1.errors / t1.volume) * 100, 1)}%</span>`)}
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Esteira de decisão</div><div class="card-sub">Toda proposta passa pelo contrato de dados antes de chegar ao modelo</div></div><div class="head-actions"><span class="chip ok"><i class="ti ti-circle-check"></i>Operando normalmente</span><button id="badBatchBtn" class="mini-btn" onclick="runContract()"><i class="ti ti-player-play"></i>Testar lote com erro</button></div></div>
+        <div class="flow">
+          ${node("", "ti-inbox", "Recebidas", "Propostas da janela", nf(t1.volume))}${arrow}
+          ${node("ok", "ti-shield-check", "Contrato de dados", "Pandera · regras rígidas", `${nf(t1.volume - t1.errors)} válidas`)}${arrow}
+          ${node("model", "ti-cpu", "Modelo XGBoost", `baseline_v1 · AUC ${fmt(AUC0)}`, "score 0 a 1")}${arrow}
+          <div class="split"><div class="row ok"><span><i class="ti ti-check"></i> Aprovadas</span><span>${nf(t1.approved)}</span></div><div class="row bad"><span><i class="ti ti-x"></i> Negadas</span><span>${nf(t1.denied)}</span></div></div>
+        </div>
+      </div>
+      <div class="grow" style="display:grid;grid-template-columns:1.6fr 1fr;gap:18px">
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Predições</div><div class="card-sub mono" style="font-size:12px">${LIVE ? "modelo baseline_v1 · serve.py" : "logs/predictions.jsonl"}</div></div></div>
+          <table>
+            <thead><tr><th>Registro</th><th style="width:38%">Score de risco</th><th>Decisão</th><th>Latência</th></tr></thead>
+            <tbody id="predRows"></tbody>
+          </table>
+        </div>
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Privacidade por padrão</div><div class="card-sub">LGPD aplicada no pipeline</div></div><span class="chip brand"><i class="ti ti-lock"></i>LGPD</span></div>
+          <div class="body" style="justify-content:space-evenly">
+            ${[["ti-fingerprint", "ID pseudonimizado", "SHA-256 com salt: o log nunca guarda o ID original"], ["ti-filter", "Só o necessário", "O modelo recebe apenas as colunas da finalidade"], ["ti-scale", "Base legal", "Proteção do crédito (LGPD, art. 7º, X)"], ["ti-clock-hour-4", "Retenção definida", "Prazo de guarda por tipo de dado"]]
+              .map(([ic, t, d]) => `<div class="priv" style="display:flex;gap:12px"><div style="width:36px;height:36px;border-radius:11px;background:#eef1fb;color:var(--brand);display:grid;place-items:center;font-size:18px;flex-shrink:0"><i class="ti ${ic}"></i></div><div><div style="font-weight:800;color:var(--ink);font-size:13.5px">${t}</div><div style="font-size:12.5px;color:var(--muted);font-weight:500;margin-top:2px">${d}</div></div></div>`).join("")}
+          </div>
+        </div>
+      </div>`,
+      enter: async () => {
+        const nodes = $all(".flow > .node, .flow > .split");
+        const arrows = $all(".flow > .arrow");
+        if (!STATIC) nodes.forEach((n) => n.classList.add("wait"));
+        nodes.forEach((n, i) => later(500 + i * 380, () => {
+          n.classList.remove("wait");
+          if (arrows[i]) later(190, () => arrows[i].classList.add("lit"));
+          if (n.classList.contains("model")) n.classList.add("pulse-brand");
+        }));
+        stagger($all(".priv"), "rise", 900, 140);
+        // Lote fixo de 6 predições, todas de uma vez e sem fluxo contínuo: a tabela fica
+        // parada. Cada render (inclusive o R) traz um lote novo.
+        const tbody = $("#predRows");
+        const phoneReady = phoneStart("t1", false);
+        const rows = [];
+        for (let i = 0; i < 6; i++) rows.push(await nextPrediction());
+        if (tbody.isConnected) tbody.innerHTML = rows.map(predRow).join("");
+        if (STATIC) await phoneReady;
+      },
+    };
+  },
+  // 2. Lote inválido -----------------------------------------------------------------
+  () => {
+    const run = CONTRACT;
+    const bad = run?.record ? { ...BAD, rows: run.record.rows, n_failures: run.record.n_failures } : BAD;
+    const nRules = run?.record?.failed_rules?.length ?? 6;
+    const passed = VALIDATION.filter((v) => v.status === "passed").length;
+    const blocked = VALIDATION.length - passed;
+    return {
+      top: `<span class="pill"><span class="live-dot" style="background:var(--risk);box-shadow:0 0 0 4px rgba(227,23,91,.18)"></span>Ingestão bloqueada</span><span class="pill">Lote bad_batch</span><span class="avatar">RT</span>`,
+      stage: stage("Celular do time de risco", "ti-bell-ringing", lockScreen("01:17", [
+        { title: "Ingestão bloqueada", body: `Lote bad_batch reprovado no contrato de dados: ${bad.n_failures} violações. Nada chegou ao modelo.`, when: "agora", crit: true },
+        { title: "Lote reference validado", body: `Contrato aprovado · ${nf(VALIDATION[0].rows)} linhas`, when: "1 min", dim: true },
+      ]), "O lote com erro para no contrato, antes de chegar ao modelo.", true),
+      console: `
+      <div class="hero bad">
+        <div class="big-ic"><i class="ti ti-shield-x"></i></div>
+        <div><h3>Ingestão bloqueada pelo contrato de dados</h3><p>Lote bad_batch · ${nf(bad.rows)} linhas · <span class="mono" style="font-size:12.5px">validate_data.py</span> saiu com <b style="color:var(--risk)">exit code ${run ? run.exit_code : 1}</b>${run?.elapsed_ms != null ? ` · rodou agora, em ${nf(run.elapsed_ms / 1000, 1)} s` : ""}</p></div>
+        <div class="stat"><b data-count="${bad.n_failures}" data-dec="0" data-from="0" data-delay="400" data-suffix="">${bad.n_failures}</b><span>violações encontradas</span></div>
+      </div>
+      <div class="grow" style="display:grid;grid-template-columns:1.35fr 1fr;gap:18px">
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Regras violadas</div><div class="card-sub">Nomes dos checks no schema Pandera</div></div><span class="chip bad">${nRules} regras</span></div>
+          <div class="body">
+          ${[["Idade fora do intervalo de 18 a 100 anos", "in_range(18, 100)"], ["Renda ausente", "not_nullable"], ["ID de proposta repetido", "field_uniqueness"], ["Linha duplicada", "no_duplicate_rows"], ["Finalidade fora do domínio", "isin(loan_intent)"], ["Target fora de {0, 1}", "isin([0, 1])"]]
+            .map(([d, c], i) => `<div class="rule" style="display:flex;align-items:center;gap:12px;padding:11px 0;${i ? "border-top:1px solid var(--line)" : ""}"><div style="width:28px;height:28px;border-radius:50%;background:var(--risk-bg);color:var(--risk);display:grid;place-items:center;font-size:15px;flex-shrink:0"><i class="ti ti-x"></i></div><div style="flex:1;font-weight:600;color:var(--ink);font-size:13.5px">${d}</div><span class="mono" style="font-size:12px;background:#f3f4fa;border:1px solid var(--line);border-radius:8px;padding:4px 9px;color:#4a5578">${c}</span></div>`).join("")}
+          </div>
+        </div>
+        <div style="display:grid;gap:18px;align-content:start">
+          <div class="card">
+            <div class="card-head" style="margin-bottom:10px"><div><div class="card-title">Esteira de decisão</div><div class="card-sub">O modelo não recebe nenhum registro</div></div></div>
+            ${[["", "ti-inbox", "Recebidas", nf(bad.rows)], ["bad", "ti-shield-x", "Contrato de dados", "Bloqueado"], ["dim", "ti-cpu", "Modelo XGBoost", "0 registros"]]
+              .map(([c, ic, t, v], i) => `${i ? `<div style="margin:2px 0 2px 17px;color:#b4bbd0"><i class="ti ti-arrow-down"></i></div>` : ""}<div class="node vnode ${c}" style="display:flex;align-items:center;gap:12px;padding:10px 12px"><div class="ic" style="width:32px;height:32px;font-size:17px"><i class="ti ${ic}"></i></div><h6 style="margin:0;flex:1">${t}</h6><span style="font-weight:800;font-size:13.5px;color:${c === "bad" ? "var(--risk)" : "var(--ink)"}">${v}</span></div>`).join("")}
+          </div>
+          <div class="code mono">
+            ${run ? `<div style="color:#7fe0c4">PS&gt; <span style="color:#c9d3f0">${run.command}</span></div><div style="color:#ff8fb1;font-weight:700;margin-bottom:6px">exit code: ${run.exit_code}</div>` : ""}<div style="color:#7f8bb0;margin-bottom:4px">logs/validation.jsonl</div>
+            {<span class="k">"batch_name"</span>: <span class="s">"bad_batch"</span>,<br>
+            &nbsp;<span class="k">"status"</span>: <span class="s">"blocked"</span>,<br>
+            &nbsp;<span class="k">"rows"</span>: <span class="n">${bad.rows}</span>, <span class="k">"n_failures"</span>: <span class="n">${bad.n_failures}</span>}
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 20px">
+        <div class="card-head" style="margin-bottom:12px"><div><div class="card-title">Lotes validados</div><div class="card-sub">Só o lote com erro foi barrado; as janelas de produção seguiram</div></div><span class="chip neutral">${passed} aprovados · ${blocked} bloqueado</span></div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px">
+          ${VALIDATION.map((v) => { const ok = v.status === "passed"; return `<div class="batch" style="border-radius:13px;padding:10px 12px;display:flex;align-items:center;gap:9px;background:${ok ? "#f2fbf7" : "#fff5f8"};border:1px solid ${ok ? "#bfe9d8" : "#f6bcd0"}"><i class="ti ${ok ? "ti-circle-check" : "ti-circle-x"}" style="font-size:20px;color:${ok ? "var(--mint)" : "var(--risk)"}"></i><div><div class="mono" style="font-size:11.5px;color:var(--ink)">${v.batch_name}</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">${nf(v.rows)} linhas</div></div></div>`; }).join("")}
+        </div>
+      </div>`,
+      enter: () => {
+        const v = $all(".vnode");
+        if (!STATIC) v.forEach((n) => n.classList.add("wait"));
+        later(300, () => v[0]?.classList.remove("wait"));
+        later(800, () => { v[1]?.classList.remove("wait"); v[1]?.classList.add("pulse-risk"); });
+        later(1300, () => v[2]?.classList.remove("wait"));
+        later(720, () => $(".hero")?.classList.add("shake"));
+        stagger($all(".rule"), "rise", 600, 160);
+        stagger($all(".batch"), "rise", 1500, 90);
+        stagger($all(".notif"), "drop", 700, 900);
+      },
+    };
+  },
+  // 3. A economia muda ---------------------------------------------------------------
+  () => {
+    const t5 = w("t5");
+    const names = { cb_person_cred_hist_length: "cb_person_cred_hist" };
+    const numeric = ["loan_int_rate", "loan_percent_income", "person_emp_length", "person_income", "person_age", "loan_amnt", "cb_person_cred_hist_length"];
+    const feats = (t5.features || []).filter((f) => numeric.includes(f.feature)).sort((a, b) => b.psi - a.psi);
+    const rows = feats.length ? feats.map((f) => {
+      const c = f.psi > 0.25 ? "bad" : f.drift || f.psi > 0.1 ? "warn" : "ok";
+      const s = f.psi > 0.25 ? "drift" : f.drift && f.psi <= 0.1 ? "só KS" : f.psi > 0.1 ? "atenção" : "estável";
+      const ks = f.ks_pvalue == null ? "—" : f.ks_pvalue < 0.001 ? "< 0,001" : fmt(f.ks_pvalue, 2);
+      return [names[f.feature] || f.feature, f.psi, ks, c, s];
+    }) : [["loan_int_rate", 3.88, "< 0,001", "bad", "drift"], ["loan_percent_income", 1.51, "< 0,001", "bad", "drift"], ["person_emp_length", 0.55, "< 0,001", "bad", "drift"], ["person_income", 0.068, "< 0,001", "warn", "só KS"], ["person_age", 0.005, "0,92", "ok", "estável"], ["cb_person_cred_hist", 0.003, "0,92", "ok", "estável"], ["loan_amnt", 0.002, "0,29", "ok", "estável"]];
+    const rate = feats.find((f) => f.feature === "loan_int_rate")?.psi ?? 3.88;
+    const strip = [["t1", "Controle"], ["t2", "Início da inflação"], ["t3", "Inflação + juros"], ["t4", "Desaceleração"], ["t5", "Crise"]];
+    return {
+      top: `<span class="pill"><span class="live-dot" style="background:var(--warn);box-shadow:0 0 0 4px rgba(138,71,196,.18)"></span>Drift detectado</span><span class="pill">Janela t5</span><span class="avatar">RT</span>`,
+      stage: stage("App do cliente", "ti-device-mobile", economyApp(), "A economia piora a cada janela de produção."),
+      console: `
+      <div class="card" style="padding:16px 20px">
+        <div class="card-head" style="margin-bottom:12px"><div><div class="card-title">Features com drift por janela</div><div class="card-sub">PSI e KS calculados pelo Evidently · alerta acima de 30%</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:800;color:var(--risk);letter-spacing:-.03em;line-height:1">${cnt(t5.n_drifted, 0, "", 0, 900)} de ${t5.n_features}</div><div class="card-sub">features em t5</div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+          ${strip.map(([n, d]) => { const p = Math.round(w(n).share_drifted * 100); return `<div class="wcard" style="border-radius:14px;padding:11px 12px;border:${n === "t5" ? "2px solid var(--risk)" : "1px solid var(--line)"};background:${n === "t5" ? "#fff5f8" : "var(--soft)"}"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="color:var(--ink);font-size:14px">${n}</b><b style="font-size:16px;color:${p > 30 ? "var(--risk)" : "var(--ink)"}">${p}%</b></div><div style="font-size:11.5px;color:var(--muted);font-weight:600;margin:2px 0 8px">${d}</div><div class="bar"><span style="width:${(p / 40) * 100}%;background:${p > 30 ? "var(--risk)" : "var(--brand)"}"></span></div></div>`; }).join("")}
+        </div>
+      </div>
+      <div class="grow" style="display:grid;grid-template-columns:1.12fr 1fr;gap:18px">
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Taxa de juros dos empréstimos</div><div class="card-sub mono" id="rateWin" style="font-size:12px">loan_int_rate · referência × produção t5</div></div><span class="chip bad">PSI ${fmt(rate, 2)}</span></div>
+          <div class="body" style="justify-content:center">${rateChart()}</div>
+          <div class="legend" style="margin-top:6px"><span><i style="background:#1935b1"></i>Referência (treino)</span><span><i style="background:#e3175b"></i>Produção t1 → t5</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">PSI por feature</div><div class="card-sub">Janela t5 · marcas em 0,10 e 0,25</div></div></div>
+          <table>
+            <tr><th>Feature</th><th style="width:34%">PSI</th><th>KS p</th><th></th></tr>
+            ${rows.map(([f, v, ks, c, s]) => `<tr class="psi-row"><td class="mono" style="font-size:11.5px;color:var(--ink)">${f}</td><td><div class="bar" style="overflow:visible"><span style="width:${Math.max(Math.min(v, 1) * 100, 2)}%;background:${c === "bad" ? "var(--risk)" : c === "warn" ? "var(--warn)" : "var(--mint)"}"></span><em style="position:absolute;left:10%;top:-3px;bottom:-3px;width:1.5px;background:#c4cadb"></em><em style="position:absolute;left:25%;top:-3px;bottom:-3px;width:1.5px;background:#c4cadb"></em></div></td><td style="font-size:12px;font-weight:600">${ks}</td><td><span class="chip ${c}">${s}</span></td></tr>`).join("")}
+          </table>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 20px">
+        <div class="card-head" style="margin-bottom:12px"><div><div class="card-title">Cadeia causal</div><div class="card-sub">Por que o modelo degrada</div></div><span class="chip brand"><i class="ti ti-route"></i>causa → efeito</span></div>
+        <div class="causal">
+          <div class="c-step"><b>Inflação e Selic sobem</b><span>choque na economia</span></div><i class="ti ti-arrow-right"></i>
+          <div class="c-step"><b>Renda, juros e dívida mudam</b><span>data drift em P(X)</span></div><i class="ti ti-arrow-right"></i>
+          <div class="c-step"><b>Mesmo perfil, mais calote</b><span>concept drift em P(y|X)</span></div><i class="ti ti-arrow-right"></i>
+          <div class="c-step end"><b>AUC cai</b><span>o modelo decide pior</span></div>
+        </div>
+      </div>`,
+      enter: () => {
+        stagger($all(".eco"), "rise", 300, 180);
+        stagger($all(".wcard"), "rise", 200, 110);
+        stagger($all(".psi-row"), "rise", 700, 110);
+        stagger($all(".causal > *"), "rise", 2600, 160);
+        if (!STATIC) {
+          showRateWindow("t1");
+          WINDOWS.forEach((n, i) => later(700 + i * 800, () => showRateWindow(n)));
+        }
+      },
+    };
+  },
+  // 4. Degradação silenciosa ---------------------------------------------------------
+  () => {
+    const t1 = w("t1"), t5 = w("t5");
+    const errors = WINDOWS.reduce((s, n) => s + (w(n).errors || 0), 0);
+    const volume = WINDOWS.reduce((s, n) => s + (w(n).volume || 0), 0);
+    const okPct = volume ? ((volume - errors) / volume) * 100 : 100;
+    const p95 = WINDOWS.map((n) => w(n).latency_p95);
+    return {
+      gate: true, // libera "Próxima etapa" só depois do aviso de inadimplência no celular
+      top: `<span class="pill"><span class="live-dot"></span>API normal · 200 OK</span><span class="pill">Janela t5</span><span class="avatar">RT</span>`,
+      stage: stage("App do cliente", "ti-device-mobile", loanApp(), "Para o cliente, nada mudou: a resposta segue rápida e sem erro."),
+      console: `
+      <div class="card" style="display:flex;align-items:center;gap:16px;padding:18px 22px;background:linear-gradient(120deg,#0f1a3a 0%,#22256b 60%,#4a2a8c 100%);border:none">
+        <div style="width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.12);display:grid;place-items:center;color:#fff;font-size:26px"><i class="ti ti-eye-off"></i></div>
+        <div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-.02em">A operação está verde. A decisão, não.</div><div style="font-size:13.5px;color:rgba(255,255,255,.75);font-weight:500;margin-top:3px">Sem erro e sem lentidão: só o drift e o rótulo real revelam a degradação silenciosa.</div></div>
+        <span class="chip" style="margin-left:auto;background:rgba(255,255,255,.14);color:#fff">Janela t5 · crise simulada</span>
+      </div>
+      <div class="grow" style="display:grid;grid-template-columns:1fr 1.45fr;gap:18px">
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Saúde operacional</div><div class="card-sub">O que a operação enxerga</div></div><span class="chip ok"><i class="ti ti-circle-check"></i>Tudo certo</span></div>
+          <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${[["ti-world", "Respostas HTTP 200", `${nf(okPct)}%`, [1, 1, 1, 1, 1]], ["ti-bolt", "Latência p95", `${nf(t5.latency_p95, 1)} ms`, p95], ["ti-alert-octagon", "Predições com erro", nf(errors), WINDOWS.map((n) => w(n).errors || 0)], ["ti-shield-check", "Contrato de dados", "OK", [1, 1, 1, 1, 1]]]
+            .map(([ic, t, v, s]) => `<div class="tile" style="border-radius:16px;background:#f2fbf7;border:1px solid #c9eedf;padding:16px;display:flex;flex-direction:column;justify-content:space-between"><div style="display:flex;justify-content:space-between;align-items:center"><div style="width:36px;height:36px;border-radius:11px;background:var(--mint-bg);color:var(--mint);display:grid;place-items:center;font-size:19px"><i class="ti ${ic}"></i></div><i class="ti ti-circle-check" style="color:var(--mint);font-size:22px"></i></div>${spark(s)}<div><div style="font-size:28px;font-weight:800;color:var(--ink);letter-spacing:-.03em">${v}</div><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:2px">${t}</div></div></div>`).join("")}</div>
+        </div>
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Qualidade do modelo</div><div class="card-sub">O que o rótulo real revela</div></div><div style="text-align:right"><div style="font-size:30px;font-weight:800;color:var(--risk);letter-spacing:-.03em;line-height:1">${cnt(t5.auc, 3, "", AUC0, 1500)}</div><div class="card-sub">AUC em t5 · modelo base ${fmt(AUC0)}</div></div></div>
+          <div class="body" style="justify-content:center">${aucChart(330)}</div>
+        </div>
+      </div>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        ${kpi("ti-arrows-down", "Taxa de aprovação", cnt(t5.approval_rate * 100, 1, "<small>%</small>", t1.approval_rate * 100, 2600), `<span class="chip warn">era ${nf(t1.approval_rate * 100, 1)}% em t1</span>`)}
+        ${kpi("ti-chart-histogram", "PSI do score", cnt(t5.prediction_psi, 3, "", 0, 2800), `<span class="chip bad">limite crítico 0,25</span>`)}
+        ${kpi("ti-arrows-shuffle", "Concept drift", cnt(CONCEPT_T5, 1, "<small>%</small>", 0, 3000), `<span class="chip bad">dos rótulos de t5 mudaram</span>`)}
+      </div>`,
+      enter: () => {
+        stagger($all(".tile"), "pop", 300, 150);
+        phoneStart("t5", true);
+        const line = $("#aucLine");
+        const pts = $all(".auc-pt");
+        if (STATIC || !line) { pts.forEach((p) => p.classList.add("on")); $("#aucArea")?.classList.add("on"); return; }
+        const len = line.getTotalLength();
+        line.style.strokeDasharray = `${len}`;
+        line.style.strokeDashoffset = `${len}`;
+        line.classList.add("draw");
+        later(1100, () => { line.style.strokeDashoffset = "0"; });
+        pts.forEach((p, i) => later(1100 + i * 330, () => p.classList.add("on")));
+        later(2600, () => $("#aucArea")?.classList.add("on"));
+      },
+    };
+  },
+  // 5. Alertas -----------------------------------------------------------------------
+  () => {
+    const crit = ALERTS.filter((a) => a.severity === "critical").length;
+    const warn = ALERTS.length - crit;
+    const t5crit = ALERTS.filter((a) => a.window === "t5" && a.severity === "critical");
+    const byType = Object.fromEntries(t5crit.map((a) => [a.type, a]));
+    const notifs = [
+      byType.performance_drop && { title: `Queda de AUC: ${fmt(byType.performance_drop.value)}`, body: `Janela t5 · AUC ${fmt(w("t5").auc)}, acima do limite de queda de ${fmt(byType.performance_drop.threshold, 2)}`, when: "agora", crit: true },
+      byType.prediction_drift && { title: `Drift do score: PSI ${fmt(byType.prediction_drift.value)}`, body: `Janela t5 · acima do limite crítico de ${fmt(byType.prediction_drift.threshold, 2)}`, when: "agora", crit: true },
+      byType.data_drift && { title: `${Math.round(byType.data_drift.value * 100)}% das features com drift`, body: "Janela t5 · renda, emprego, juros e empréstimo/renda", when: "agora", crit: true },
+    ].filter(Boolean);
+    const bars = [["bad_batch", "lote"], ...WINDOWS.map((n) => [n, n])].map(([k, l]) => [l, ALERTS.filter((a) => a.window === k && a.severity === "critical").length, ALERTS.filter((a) => a.window === k && a.severity === "warning").length]);
+    return {
+      top: `<span class="pill"><span class="live-dot" style="background:var(--risk);box-shadow:0 0 0 4px rgba(227,23,91,.18)"></span>${ALERTS.length} alertas · ${crit} críticos</span><span class="pill">Janelas t1 a t5</span><span class="avatar">RT</span>`,
+      stage: stage("Celular do time de risco", "ti-bell-ringing", lockScreen("01:18", notifs), "Os alertas chegam ao time de risco com o que fazer.", true),
+      console: `
+      <div class="grow" style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px">
+        <div class="card fill">
+          <div class="card-head"><div><div class="card-title">Central de alertas</div><div class="card-sub mono" style="font-size:12px">logs/alerts.jsonl</div></div><div style="display:flex;gap:6px"><span class="chip brand">Todos ${ALERTS.length}</span><span class="chip bad">Críticos ${crit}</span><span class="chip warn">Atenção ${warn}</span></div></div>
+          <div class="body">${ALERTS.map((a, i) => { const c = a.severity === "critical"; const [t, v] = alertText(a); return `<div class="alert-row" style="display:flex;align-items:center;gap:12px;padding:14px 0;${i ? "border-top:1px solid var(--line)" : ""}"><div style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:17px;background:${c ? "var(--risk-bg)" : "var(--warn-bg)"};color:${c ? "var(--risk)" : "var(--warn)"}"><i class="ti ${c ? "ti-alert-octagon" : "ti-alert-triangle"}"></i></div><div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--ink);font-size:13.5px">${t}</div><div style="font-size:12px;color:var(--muted);font-weight:500;margin-top:1px"><b style="color:var(--text)">${a.window}</b> · <span class="mono" style="font-size:11.5px">${a.type}</span></div></div><span style="font-size:12.5px;font-weight:700;color:${c ? "var(--risk)" : "var(--warn)"}">${v}</span></div>`; }).join("")}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:12px;margin-top:4px;border-top:1px solid var(--line)"><span style="font-size:12px;font-weight:700;color:var(--muted);margin-right:2px">Limites</span>${["features com drift > 30%", "PSI do score 0,10 · 0,25", "queda de AUC > 0,05", "lote bloqueado"].map((t) => `<span class="chip neutral">${t}</span>`).join("")}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="card fill" style="height:auto;flex:1">
+            <div class="card-head"><div><div class="card-title">Alertas por janela</div><div class="card-sub">Crescem junto com a crise</div></div></div>
+            <div style="display:flex;align-items:flex-end;gap:12px;flex:1;padding:0 4px">
+              ${bars.map(([l, c, a]) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><b style="font-size:13px;color:var(--ink)">${c + a || ""}</b><div style="width:100%;display:flex;flex-direction:column;gap:3px">${a ? `<div class="grow-bar" data-h="${a * 84}" style="height:${a * 84}px;border-radius:8px;background:var(--warn)"></div>` : ""}${c ? `<div class="grow-bar" data-h="${c * 84}" style="height:${c * 84}px;border-radius:8px;background:var(--risk)"></div>` : ""}${!c && !a ? `<div style="height:4px;border-radius:4px;background:#e6e9f3"></div>` : ""}</div><span style="font-size:12px;font-weight:600;color:var(--muted)">${l}</span></div>`).join("")}
+            </div>
+          </div>
+          <div class="card presc" style="background:linear-gradient(160deg,#1935b1 0%,#4b34d4 100%);border:none;color:#fff">
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:19px"><i class="ti ti-stethoscope"></i></div><div style="font-size:15.5px;font-weight:800">Prescrição</div></div>
+            <div style="display:grid;gap:9px;margin:14px 0 16px">
+              ${["Retreinar com rótulos recentes", "Recalibrar o corte de aprovação", "Usar renda real (deflacionada)", "Monitorar viés junto com o drift"]
+                .map((t, i) => `<div class="presc-item" style="display:flex;gap:10px;align-items:center;font-size:13.5px;font-weight:600"><span style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:11.5px;font-weight:800">${i + 1}</span>${t}</div>`).join("")}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div style="background:#fff;color:var(--brand);border-radius:12px;padding:10px;text-align:center;font-weight:800;font-size:13px">Relatório Evidently</div>
+              <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:10px;text-align:center;font-weight:700;font-size:13px">Painel Grafana</div>
+            </div>
+          </div>
+        </div>
+      </div>`,
+      enter: () => {
+        stagger($all(".alert-row"), "rise", 200, 220);
+        stagger($all(".notif"), "drop", 1200, 800);
+        stagger([$(".presc")].filter(Boolean), "pop", 2400, 0);
+        stagger($all(".presc-item"), "rise", 2700, 150);
+        if (!STATIC) {
+          $all(".grow-bar").forEach((b, i) => {
+            b.style.height = "0px";
+            later(900 + i * 140, () => { b.style.height = `${b.dataset.h}px`; });
+          });
+        }
+      },
+    };
+  },
+];
+
+function render(i) {
+  clearTimers();
+  renderId++;
+  phone = null;
+  const s = SCENES[i]();
+  document.getElementById("stepper").innerHTML = STEPS.map((t, k) =>
+    `${k ? `<span class="step-line${k <= i ? " done" : ""}"></span>` : ""}<div class="step ${k < i ? "done" : k === i ? "on" : ""}"><span class="n">${k < i ? `<i class="ti ti-check"></i>` : k + 1}</span>${k === i ? t : ""}</div>`).join("");
+  setNext(!s.gate);
+  document.getElementById("topRight").innerHTML = s.top;
+  document.getElementById("stage").innerHTML = s.stage;
+  const consoleEl = document.getElementById("console");
+  consoleEl.innerHTML = s.console;
+  stagger([$(".phone")], "pop", 0, 0);
+  stagger([...consoleEl.children], "rise", 80, 110);
+  stagger($all(".kpis > .card", consoleEl), "rise", 150, 90);
+  $all("[data-count]").forEach(countUp);
+  growBars(consoleEl);
+  s.enter?.();
+}
+
+async function detectLive() {
+  if (location.protocol === "file:") return false;
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 800);
+    const r = await fetch("/api/status", { signal: ctrl.signal, cache: "no-store" });
+    return r.ok && (await r.json()).live === true;
+  } catch {
+    return false;
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") goNext();
+  if (e.key === "ArrowLeft" && current > 0) render(--current);
+  if (e.key === "r" || e.key === "R") render(current);
+  if ((e.key === "l" || e.key === "L") && current === 0) runContract();
+});
+
+detectLive().then((live) => { LIVE = live; render(current); });
+</script>
+</body>
+</html>

@@ -22,6 +22,13 @@ models/*.json
 !logs/*.jsonl
 !logs/.gitkeep
 
+# Material de apresentação: o deck e a edição do vídeo ficam locais (D14). A página de
+# demonstração mostrada no vídeo é versionada, sem os prints de aprovação (D19).
+!apresentacao/
+apresentacao/*
+!apresentacao/demo/
+apresentacao/demo/shots/
+
 # Python
 __pycache__/
 *.py[cod]
