@@ -1,0 +1,36 @@
+name: CI
+
+# Roda lint, formatação e testes em cada push e pull request (T0.6).
+# Os testes usam dados sintéticos (tests/fixtures/synthetic.py): não precisam do Kaggle.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Instalar dependências (versões travadas no uv.lock)
+        run: uv sync --frozen
+
+      - name: Lint (ruff check)
+        run: uv run ruff check .
+
+      - name: Formatação (ruff format --check)
+        run: uv run ruff format --check .
+
+      - name: Testes (pytest)
+        run: uv run pytest
