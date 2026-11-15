@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     """Remove/corrige registros inválidos para que a Referência passe no contrato.
 
-    Registros que não podem ser corrigidos sem inventar informação são removidos.
+    Registros que não podem ser corrigidos sem inventar informação são removidos. As
+    duplicatas são comparadas sem o `application_id`: o ID é criado em `load_raw`, antes da
+    limpeza, então duas linhas iguais no CSV chegam aqui com IDs diferentes.
     """
     import logging
 
@@ -21,7 +23,8 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
 
     result = df.copy()
     before = len(result)
-    result = result.drop_duplicates()
+    content = [column for column in result.columns if column != config.ID_COLUMN]
+    result = result.drop_duplicates(subset=content)
     logger.info("Limpeza: %d duplicatas removidas", before - len(result))
 
     before = len(result)
