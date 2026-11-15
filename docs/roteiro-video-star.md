@@ -9,7 +9,7 @@ cada escolha, está na seção 5 de [plano-etapa-4.md](plano-etapa-4.md).
 - **Limite do enunciado:** 5 minutos. **Regra do grupo:** menos de **4:59**.
 - **Meta:** ~4:45 no total. A fala tem ~720 palavras: no ritmo dos vídeos anteriores do
   grupo (~165 palavras por minuto) são ~4:22, e o resto cobre as trocas de tela, os dois
-  cliques no celular e a espera do terminal. Os tempos de cada bloco abaixo já seguem esse
+  cliques no celular e a espera do contrato. Os tempos de cada bloco abaixo já seguem esse
   ritmo. Se o ensaio cronometrado passar de 4:50, aplique os cortes do
   [plano B](#plano-b).
 - **Ordem STAR dita em voz alta:** situação, tarefa, ação e resultado, como no vídeo da Fase 2.
@@ -21,8 +21,8 @@ cada escolha, está na seção 5 de [plano-etapa-4.md](plano-etapa-4.md).
 | Tela | O que é | Onde |
 |---|---|---|
 | **Deck** | `Tech_Challenge_4_STAR.pptx`, 11 slides; as notas trazem o tempo de cada bloco | `apresentacao/` (local, fora do Git) |
-| **Página** | página de demonstração "vértice", 5 cenas (celular à esquerda, Central de Risco à direita) | `apresentacao/demo/index.html` (local, fora do Git) |
-| **Terminal** | demonstração ao vivo do contrato bloqueando o lote ruim | raiz do repositório |
+| **Página** | página de demonstração "vértice", 5 cenas (celular à esquerda, Central de Risco à direita); o botão "Testar lote com erro" roda o contrato de verdade dentro da página | `apresentacao/demo/index.html` (local, fora do Git) |
+| **Terminal** | só no plano B do A2, se o botão não funcionar | raiz do repositório |
 | **Evidently** | relatório real de drift da janela t5, aberto em duas abas (tabela e PSI por coluna) | `reports/drift/drift_t5.html` |
 | **README** | seção "Etapa 4: Governança e LGPD" no GitHub | navegador |
 
@@ -61,10 +61,17 @@ predições do `baseline_v1` real. O celular das cenas 1 e 4 também fica ao viv
   (empréstimo acima de 25% da renda). Uns 3 s depois da aprovação chega o aviso "6 meses
   depois: parcelas em atraso". Na simulação, 3 em cada 10 clientes assim deixam de pagar.
 - Finalidade "MEDICAL" nunca aparece no celular, porque a D10 só a mostra em agregados.
+- **Testar lote com erro** (cena 1, no canto da esteira de decisão) roda o mesmo comando do
+  contrato (`scripts/validate_data.py --make-bad-batch`) pelo `serve.py` e mostra, num
+  terminal dentro da página, a saída real, o exit code e o tempo. Uns 2 s depois a página
+  vai sozinha para a cena 2, que diz "rodou agora, em X s". A tecla **L** faz o mesmo. O
+  comando grava em `logs/validation.jsonl` e `reports/validation/`, e o `serve.py` devolve
+  esses dois arquivos ao conteúdo versionado logo depois.
 
 Abrindo o `index.html` direto no navegador, a página funciona do mesmo jeito, mas a tabela
-repete predições do log ("replay dos logs") e o celular usa um cliente fixo. O `serve.py`
-não grava nada em `logs/`. Já o `run_pipeline.py` regrava `logs/` e `reports/`:
+repete predições do log ("replay dos logs"), o celular usa um cliente fixo e o terminal do
+contrato repete a saída do log ("replay do log"). O `serve.py` não deixa nada novo em
+`logs/`. Já o `run_pipeline.py` regrava `logs/` e `reports/`:
 se precisar rodá-lo, faça isso depois de commitar a Etapa 4 e descarte as mudanças geradas
 com `git restore logs/ reports/`.
 
@@ -86,9 +93,9 @@ abas somem, mas os atalhos continuam funcionando. Abra as abas nesta ordem:
   retângulo verde tracejado é onde clicar. Os retângulos laranja numerados são onde apontar,
   na ordem dos números; o balão de cada um traz o trecho da fala em que você aponta.
 - **Mouse:** mova devagar, pare em cima do item enquanto fala e, quando não estiver
-  apontando, deixe o cursor parado num canto vazio. Na página, só os dois botões do celular
-  respondem ao clique ("Atualizar dados" e "Pedir análise"); clicar nos cartões não faz
-  nada. O clique no logo serve só para garantir que a página está com o foco depois do
+  apontando, deixe o cursor parado num canto vazio. Na página, só três botões respondem ao
+  clique: os dois do celular ("Atualizar dados" e "Pedir análise") e o "Testar lote com
+  erro" da cena 1; clicar nos cartões não faz nada. O clique no logo serve só para garantir que a página está com o foco depois do
   `Alt+Tab`.
 - Os prints foram gerados da página e do relatório reais (pasta
   [roteiro-video/](roteiro-video/)). Para gerar de novo depois de mudar a página, com o
@@ -156,41 +163,41 @@ ordem: o cenário, a mudança, o risco.
 | "nenhum erro" | aponte **4**, "Predições com erro" |
 | "só o ID com hash" | aponte **5**, a coluna "Registro" da tabela |
 
-### A2 · Ação: contrato de dados · 1:38–2:05 · terminal → página, cena 2
+### A2 · Ação: contrato de dados · 1:38–2:05 · página, cena 1 → cena 2
 
-**Tela:** terminal, com o comando já digitado. Aperte Enter na hora: a saída leva uns
-5 segundos. Aos ~1:59, volte para a página na **cena 2 "Lote inválido"**.
-
-No PowerShell (terminal padrão do Windows e do VS Code):
-
-```powershell
-uv run python scripts/validate_data.py --make-bad-batch; echo "exit code: $LASTEXITCODE"
-```
-
-No Git Bash, o equivalente é `echo "exit code: $?"`. No PowerShell, o `$?` mostra
-`True`/`False` em vez do código de saída, por isso lá se usa `$LASTEXITCODE`.
+**Tela:** a página continua na **cena 1**, onde o A1 parou. Não precisa de terminal: o
+botão **Testar lote com erro** roda o comando do contrato e mostra a saída num terminal
+dentro da página. Uns 2 s depois de aparecer o exit code, a página vai sozinha para a
+**cena 2 "Lote inválido"**.
 
 > Começando pelo contrato, que é em Pandera, com regras rígidas: idade entre
 > 18 e 100, renda obrigatória e dentro do limite, sem duplicata, categoria válida e target zero
-> ou um. Aqui eu passo um lote com erro de propósito... e o contrato bloqueia, exit code 1.
-> [cena 2] Na página, oito violações, e nada chegou no modelo.
+> ou um. Aqui eu passo um lote com erro de propósito... [clique em Testar lote com erro] e o
+> contrato bloqueia, exit code 1. [a página vai sozinha para a cena 2] E aqui, oito violações,
+> e nada chegou no modelo.
 
-**No terminal:** quando a saída aparecer, aponte as duas últimas linhas:
+**Na página, aos ~1:38, ainda na cena 1 (o clique é aos ~1:50):**
 
-```text
-... ERROR __main__: Lote 'bad_batch' bloqueado: violou o contrato de dados   ← "o contrato bloqueia"
-exit code: 1                                                                  ← "exit code 1"
-```
-
-**Na página, aos ~1:59:**
-
-![Cena 2: aperte a seta e aponte as oito violações e o modelo com zero registros](roteiro-video/a2-cena-2.jpg)
+![Cena 1: clique em Testar lote com erro e aponte o bloqueio e o exit code](roteiro-video/a2-cena-1-contrato.jpg)
 
 | Momento | O que fazer |
 |---|---|
-| Antes de falar | `Alt+Tab` para o Chrome, clique no logo e aperte `→`. O lote bate no contrato e a esteira fica vermelha |
+| Antes de falar | nada: a página já está na cena 1 desde o A1. Comece a fala das regras com o cursor parado |
+| "passo um lote com erro" | clique em **Testar lote com erro** (retângulo verde). O terminal abre embaixo da esteira, digita o comando e roda; a saída leva 2 a 3 s |
+| "o contrato bloqueia, exit code 1" | aponte **1**, a linha vermelha "Lote 'bad_batch' bloqueado" e o "exit code: 1". O contrato da esteira fica vermelho |
+
+**Na página, aos ~1:57, já na cena 2:**
+
+![Cena 2: a página troca sozinha; aponte as oito violações e o modelo com zero registros](roteiro-video/a2-cena-2.jpg)
+
+| Momento | O que fazer |
+|---|---|
+| Antes de falar | nada: a página troca sozinha. O lote bate no contrato, a esteira fica vermelha e o título diz "exit code 1 · rodou agora" |
 | "oito violações" | aponte **1**, o "8 violações encontradas" |
 | "nada chegou no modelo" | aponte **2**, "Modelo XGBoost · 0 registros" |
+
+Se o selo do terminal disser "replay do log" em vez de "ao vivo · serve.py", o `serve.py`
+não está no ar e a saída é a do log versionado (ver o [plano B](#plano-b)).
 
 ### A3 · Ação: simulação do drift · 2:05–2:35 · slide 6 → página, cena 3
 
@@ -360,10 +367,9 @@ Antes de gravar:
 - [ ] Evidently, aba 4: role até "Drift in column 'loan_int_rate'", com o bloco de
       `loan_percent_income` aparecendo embaixo.
 - [ ] README no GitHub (aba 2) aberto na seção "Etapa 4: Governança e LGPD".
-- [ ] Terminal na raiz do repositório, com fonte grande e o comando do A2 já digitado.
-      Rode o comando uma vez antes: se aparecer o aviso `PSEUDONYMIZATION_SALT não
-      definido`, defina o salt nesse terminal (`$env:PSEUDONYMIZATION_SALT = "<salt do .env>"`
-      no PowerShell) para o aviso não aparecer no vídeo.
+- [ ] Na aba 1, teste o **Testar lote com erro** uma vez: o selo do terminal deve dizer
+      "ao vivo · serve.py" e a página deve ir sozinha para a cena 2. Depois volte com `←`
+      para a cena 1 e aperte `R`.
 - [ ] Notificações do sistema desligadas e abas pessoais fechadas.
 - [ ] Microfone testado com 10 s de gravação.
 
@@ -371,11 +377,10 @@ Durante e depois:
 
 - [ ] Gravar por blocos (S, T, A, R) e juntar na edição. Errou, repete só o bloco.
 - [ ] Conferir a duração final no editor: **menos de 4:59**.
-- [ ] O comando do A2 acrescenta uma linha em `logs/validation.jsonl` e regrava o
-      `reports/validation/bad_batch_failures.csv`. Depois de gravar, descarte essas mudanças
-      com `git restore logs/validation.jsonl reports/validation/`. **Só faça isso depois de
-      commitar a Etapa 4:** antes do commit, o `git restore` volta o relatório antigo, com
-      um ID em claro.
+- [ ] O botão do A2 não deixa nada novo em `logs/` nem em `reports/`. Só se usar o terminal
+      do plano B: ele acrescenta uma linha em `logs/validation.jsonl` e regrava o
+      `reports/validation/bad_batch_failures.csv`; depois de gravar, descarte com
+      `git restore logs/validation.jsonl reports/validation/`.
 - [ ] Subir no YouTube como **Não listado**, com integrantes, RMs e link do repositório na
       descrição.
 - [ ] Colocar o link na seção "Vídeo STAR" do README (T4.7).
@@ -387,7 +392,13 @@ Durante e depois:
 - **O celular não responde ou mostra sempre o mesmo cliente:** o `serve.py` caiu. Suba de
   novo e recarregue a página; sem ele, o celular usa um cliente fixo e a cena 4 ainda mostra
   o aviso de atraso.
-- **O terminal demora:** grave o A2 à parte e corte na edição.
+- **O botão do contrato mostra "replay do log":** o `serve.py` caiu. Suba de novo e
+  recarregue a página. Se não der tempo, a saída do replay é a mesma do log versionado e a
+  fala não muda. Último recurso: rode no PowerShell, na raiz do repositório,
+  `uv run python scripts/validate_data.py --make-bad-batch; echo "exit code: $LASTEXITCODE"`,
+  volte para a página com `Alt+Tab`, clique no logo e aperte `→`; depois de gravar, rode
+  `git restore logs/validation.jsonl reports/validation/`.
+- **O contrato demora:** grave o A2 à parte e corte na edição.
 - **O tempo estourou no ensaio:** corte, nesta ordem, o Grafana, o clique no celular do A1
   (a frase "Um cliente acabou de pedir crédito…"; a cena 4 já mostra o celular), a rolagem do
   README no A4 e a quarta lição do R3.

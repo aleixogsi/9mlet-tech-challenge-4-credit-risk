@@ -345,11 +345,12 @@ Conclusões:
 
 - **Meta de 4:30 de fala**, cerca de 650 palavras a ~150 palavras/min. Isso deixa ~30 s de
   folga para o limite de 4:59.
-- **Nada de tour de pastas.** Abrir só as evidências: terminal, HTML do Evidently, painel,
-  README de governança.
+- **Nada de tour de pastas.** Abrir só as evidências: HTML do Evidently, painel (com o
+  contrato rodando dentro dele) e README de governança.
 - **Comandos já executados antes de gravar.** O `run_pipeline.py` é lento demais para ao
-  vivo. No terminal, mostrar só o bloqueio do contrato, que é rápido.
-- Abas abertas na ordem do roteiro, zoom no navegador e no terminal.
+  vivo. Ao vivo, só o bloqueio do contrato, que é rápido e roda pelo botão "Testar lote
+  com erro" da página (D18), sem trocar de janela.
+- Abas abertas na ordem do roteiro e zoom no navegador.
 - Nomes e RMs **no slide de abertura**, não lidos em voz alta.
 - Dizer em voz alta "Situação", "Tarefa", "Ação", "Resultado", como fez o vídeo da Fase 2.
 - **Situation é o cenário proposto pelo desafio** (a fintech, a economia mudando, a suspeita
@@ -361,7 +362,8 @@ Conclusões:
   rótulos (cena 1: "baseline_v1 · AUC 0,927"; cena 4: "crise simulada" e "modelo base
   0,927").
 - **A página de demonstração (W7) mostra; a evidência prova.** A página conduz as partes A
-  e R, mas o vídeo também abre o terminal com o `exit code 1` e o HTML real do Evidently,
+  e R, mas o vídeo também mostra a saída real do contrato com o `exit code 1` e o HTML real
+  do Evidently,
   que é o que o enunciado pede no Result.
 - Gravar por blocos e editar. **Conferir a duração final no editor antes de subir.**
 - YouTube como "Não listado", com descrição contendo integrantes, RMs e link do GitHub.
@@ -374,7 +376,7 @@ Conclusões:
 | **S** | 0:15–0:45 | slide 3 | o cenário do desafio: fintech com Credit Scoring em produção; inflação e novos perfis de clientes; a diretoria suspeita de decisões erradas; risco de degradação silenciosa |
 | **T** | 0:45–1:05 | slide 4 | interceptar dados ruins · detectar drift (data + concept) · garantir compliance (LGPD, vieses) |
 | **A1** arquitetura | 1:05–1:30 | slide 5 → página, cena 1 | a camada de sustentação ponta a ponta; o modelo respondendo ao vivo (citar de passagem a AUC de 0,927 do modelo base); log só com hash |
-| **A2** contrato | 1:30–1:50 | terminal → página, cena 2 | Pandera com regras rígidas; `validate_data.py --make-bad-batch` → **exit code 1** e regras violadas |
+| **A2** contrato | 1:30–1:50 | página, cena 1 (botão do contrato) → cena 2 | Pandera com regras rígidas; `validate_data.py --make-bad-batch` → **exit code 1** e regras violadas |
 | **A3** simulação | 1:50–2:15 | slide 6 → página, cena 3 | 4 features alteradas com justificativa econômica; concept drift em t4 e t5; seed fixa; PSI e KS do Evidently |
 | **A4** governança | 2:15–2:45 | slide 7 + README (governança) | pseudonimização, base legal (art. 7º, X e art. 20), retenção, fairness, cadeia causal |
 | **R1** drift | 2:45–3:25 | página, cena 4 → `drift_t5.html` | operação verde e decisão pior; features degradadas apontadas no Evidently; AUC 0,927 → 0,806 na crise que simulamos |
