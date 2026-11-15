@@ -3,7 +3,7 @@
 Requisito do enunciado: pelo menos 3 regras RÍGIDAS. Regras planejadas:
   1. person_age entre MIN_AGE e MAX_AGE (idade ≥ 18)
   2. person_income não nula e entre MIN_INCOME e MAX_INCOME
-  3. sem linhas duplicadas
+  3. sem linhas duplicadas (o conteúdo, sem contar o ID)
   4. loan_status ∈ {0, 1} (apenas no schema de treino)
   5. categóricas dentro do domínio conhecido (loan_grade, loan_intent, ...)
 """
@@ -48,9 +48,7 @@ def _build_schema(include_target: bool) -> pa.DataFrameSchema:
         "loan_amnt": pa.Column(float, checks=pa.Check.ge(0), nullable=False),
         "loan_int_rate": pa.Column(float, checks=pa.Check.ge(0), nullable=False),
         "loan_percent_income": pa.Column(float, checks=pa.Check.ge(0), nullable=False),
-        "cb_person_cred_hist_length": pa.Column(
-            float, checks=pa.Check.ge(0), nullable=False
-        ),
+        "cb_person_cred_hist_length": pa.Column(float, checks=pa.Check.ge(0), nullable=False),
         "person_home_ownership": pa.Column(
             str, checks=pa.Check.isin(["RENT", "OWN", "MORTGAGE", "OTHER"]), nullable=False
         ),
@@ -76,14 +74,15 @@ def _build_schema(include_target: bool) -> pa.DataFrameSchema:
         ),
     }
     if include_target:
-        columns[config.TARGET] = pa.Column(
-            int, checks=pa.Check.isin([0, 1]), nullable=False
-        )
+        columns[config.TARGET] = pa.Column(int, checks=pa.Check.isin([0, 1]), nullable=False)
     return pa.DataFrameSchema(
         columns,
         checks=[
             pa.Check(
-                lambda frame: not frame.duplicated().any(),
+                # Compara o conteúdo sem o ID: a mesma proposta com outro ID é duplicata.
+                lambda frame: (
+                    not frame.drop(columns=[config.ID_COLUMN], errors="ignore").duplicated().any()
+                ),
                 name="no_duplicate_rows",
             )
         ],

@@ -19,7 +19,7 @@ def valid_frame(rows: int = 8) -> pd.DataFrame:
     return pd.DataFrame(
         {
             config.ID_COLUMN: [f"id-{i}" for i in range(rows)],
-            "person_age": [30.0] * rows,
+            "person_age": [30.0 + i for i in range(rows)],
             "person_income": [50_000.0] * rows,
             "person_emp_length": [5.0] * rows,
             "loan_amnt": [10_000.0] * rows,
@@ -60,6 +60,15 @@ def test_duplicate_rows_are_blocked() -> None:
     frame = valid_frame()
     frame.loc[1] = frame.loc[0].copy()
     assert_blocked(frame)
+
+
+def test_duplicate_content_with_new_id_is_blocked() -> None:
+    frame = valid_frame()
+    frame.loc[1] = frame.loc[0].copy()
+    frame.loc[1, config.ID_COLUMN] = "id-novo"
+    with pytest.raises(DataContractError) as error:
+        validate_or_block(frame, build_training_schema(), "dup")
+    assert "no_duplicate_rows" in error.value.failures["check"].astype(str).tolist()
 
 
 def test_invalid_income_is_blocked() -> None:
