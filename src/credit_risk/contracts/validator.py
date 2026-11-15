@@ -34,9 +34,7 @@ def validate_or_block(df: pd.DataFrame, schema: Any, batch_name: str) -> pd.Data
         validated = schema.validate(df, lazy=True)
     except SchemaErrors as error:
         failures = error.failure_cases
-        rules = sorted(
-            {str(value) for value in failures["check"].dropna().tolist()}
-        )
+        rules = sorted({str(value) for value in failures["check"].dropna().tolist()})
         _append_log(
             {
                 "timestamp": datetime.now(UTC).isoformat(),
@@ -64,11 +62,25 @@ def validate_or_block(df: pd.DataFrame, schema: Any, batch_name: str) -> pd.Data
 def write_validation_report(failures: Any, batch_name: str, output_dir: Path) -> Path:
     """Gera a evidência da falha do contrato em reports/validation/ (HTML ou CSV + resumo).
 
-    O CSV evita depender de uma biblioteca de renderização HTML.
+    O CSV evita depender de uma biblioteca de renderização HTML. Valores da coluna de ID
+    (ex.: duplicatas de `application_id`) saem pseudonimizados com salt, como no log de
+    predições: o relatório é versionado e o ID nunca aparece em claro.
     """
+    from credit_risk import config
+    from credit_risk.data.privacy import pseudonymize_id
+    from credit_risk.inference import get_salt
+
     output_dir.mkdir(parents=True, exist_ok=True)
     output = output_dir / f"{batch_name}_failures.csv"
-    failures.to_csv(output, index=False)
+    report = failures.copy()
+    id_rows = report["column"] == config.ID_COLUMN
+    if id_rows.any():
+        salt = get_salt()
+        report["failure_case"] = report["failure_case"].astype(object)
+        report.loc[id_rows, "failure_case"] = [
+            pseudonymize_id(str(value), salt) for value in report.loc[id_rows, "failure_case"]
+        ]
+    report.to_csv(output, index=False)
     return output
 
 

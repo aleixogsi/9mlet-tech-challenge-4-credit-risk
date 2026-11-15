@@ -92,3 +92,21 @@ def test_invalid_target_is_blocked() -> None:
 def test_bad_batch_violates_every_rule() -> None:
     batch = make_bad_batch(valid_frame(), config.SEED)
     assert_blocked(batch)
+
+
+def test_failure_report_pseudonymizes_ids(tmp_path, monkeypatch) -> None:
+    from credit_risk.contracts.validator import write_validation_report
+
+    monkeypatch.setenv(config.PSEUDONYMIZATION_SALT_ENV, "segredo")
+    frame = valid_frame()
+    frame.loc[1, config.ID_COLUMN] = frame.loc[0, config.ID_COLUMN]
+    with pytest.raises(DataContractError) as error:
+        validate_or_block(frame, build_training_schema(), "dup")
+
+    output = write_validation_report(error.value.failures, "dup", tmp_path)
+    report = pd.read_csv(output)
+
+    id_cases = report.loc[report["column"] == config.ID_COLUMN, "failure_case"]
+    assert not id_cases.empty
+    assert "id-0" not in output.read_text(encoding="utf-8")
+    assert id_cases.str.fullmatch(r"[0-9a-f]{64}").all()
