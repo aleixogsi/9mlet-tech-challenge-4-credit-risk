@@ -278,6 +278,10 @@ o que aparece na tela (slide, página ou evidência) e o tempo de cada trecho.
 Fica na pasta `apresentacao/` na raiz do repositório, excluída do Git via
 `.git/info/exclude`. Serve só para gravar o vídeo; nada aqui é entregável do repositório.
 
+> **Atualização (15/11/2026, D19):** a página de demonstração (`apresentacao/demo/`, sem os
+> prints de `shots/`) passou a ser versionada, porque o vídeo a mostra como o painel de
+> observabilidade. O deck e a edição do vídeo continuam locais.
+
 **Deck STAR: pronto.** `apresentacao/Tech_Challenge_4_STAR.pptx`, gerado por
 `apresentacao/build_deck.py`, com a identidade visual do vídeo da Fase 2 (Fernando).
 São 11 slides com as falas nas notas:

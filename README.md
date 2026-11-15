@@ -2,6 +2,8 @@
 
 > Tech Challenge Fase 4 (MLET / FIAP Pós Tech): observabilidade contínua, detecção de
 > drift, qualidade de dados e governança (LGPD) de um modelo de Credit Scoring.
+>
+> **Vídeo STAR (4:52):** [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo)
 
 O projeto é desenvolvido em quatro etapas. O status das tarefas e os responsáveis estão
 em [TODO.md](TODO.md).
@@ -38,9 +40,9 @@ Onde está a prova de cada critério de avaliação do enunciado.
 |---|---|---|
 | Validação de dados | 25% | contrato em [src/credit_risk/contracts/schemas.py](src/credit_risk/contracts/schemas.py); bloqueio com exit code 1 em `scripts/validate_data.py --make-bad-batch`; regras violadas em [reports/validation/bad_batch_failures.csv](reports/validation/bad_batch_failures.csv); histórico em [logs/validation.jsonl](logs/validation.jsonl); testes em [tests/test_contracts.py](tests/test_contracts.py) |
 | Detecção de drift | 25% | cenários em [configs/drift_scenarios.yaml](configs/drift_scenarios.yaml); relatórios Evidently em [reports/drift/](reports/drift/) (`drift_t1..t5.html`, `performance_t1..t5.html`); PSI e KS por feature em `psi_ks_t1..t5.csv`; resumo em [reports/drift/drift_summary.json](reports/drift/drift_summary.json) |
-| Observabilidade e logs | 20% | painel em [reports/monitoring/index.html](reports/monitoring/index.html); logs em [logs/](logs/) (predições sem PII, validação e alertas); métricas Prometheus em [reports/monitoring/metrics.prom](reports/monitoring/metrics.prom); Grafana via `docker compose up` |
+| Observabilidade e logs | 20% | painel em [reports/monitoring/index.html](reports/monitoring/index.html); logs em [logs/](logs/) (predições sem PII, validação e alertas); métricas Prometheus em [reports/monitoring/metrics.prom](reports/monitoring/metrics.prom); Grafana via `docker compose up`; página de demonstração do vídeo em [apresentacao/demo/](apresentacao/demo/) |
 | Governança (LGPD) | 15% | seção [Etapa 4: Governança e LGPD](#etapa-4-governança-e-lgpd) deste README; vieses em [reports/training/fairness.csv](reports/training/fairness.csv) e [fairness_windows.csv](reports/training/fairness_windows.csv) |
-| Vídeo STAR | 15% | link na seção [Vídeo STAR](#vídeo-star); roteiro em [docs/roteiro-video-star.md](docs/roteiro-video-star.md) |
+| Vídeo STAR | 15% | [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo) (4:52); detalhes na seção [Vídeo STAR](#vídeo-star); roteiro em [docs/roteiro-video-star.md](docs/roteiro-video-star.md) |
 
 ## Stack
 
@@ -311,6 +313,30 @@ O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/moni
 | `logs/predictions.jsonl` | Log centralizado de predições por janela, pseudonimizado (SHA-256 + salt) e sem PII |
 | `logs/alerts.jsonl` | Alertas estruturados disparados pelas regras de degradação e qualidade |
 | `tests/fixtures/mocks/` | Mocks dos contratos de interface (`T3.0`) para testes unitários rápidos da Etapa 3 |
+
+### Página de demonstração do vídeo (`apresentacao/demo/`)
+
+O vídeo usa uma página com a marca fictícia "vértice": o app do cliente fica à esquerda e a
+Central de Risco à direita. Ela não tem números próprios. O `build_data.py` gera o `data.js`
+a partir de `logs/` e `reports/`, e o [tests/test_demo_page.py](tests/test_demo_page.py)
+confere que os números da página batem com esses artefatos e que nenhum ID completo aparece.
+
+| Arquivo | O que faz |
+|---|---|
+| `index.html`, `styles.css` | a página, com 5 cenas (setas do teclado ou botão "Próxima etapa") |
+| `data.js` | números da execução final, gerados pelo `build_data.py` (não edite à mão) |
+| `build_data.py` | lê `logs/*.jsonl`, `reports/training/metrics.json` e `reports/drift/drift_summary.json`; com `data/` local, inclui também os histogramas de `loan_int_rate` |
+| `serve.py` | servidor local opcional. Com ele, o modelo responde ao vivo, o celular sorteia clientes com o drift da janela aplicado (D17) e o botão "Testar lote com erro" roda o contrato de verdade (D18) |
+
+```bash
+uv run python apresentacao/demo/build_data.py   # regrava o data.js depois de rodar o pipeline
+uv run python apresentacao/demo/serve.py        # http://127.0.0.1:8765/?cena=1 (precisa de models/ e data/)
+```
+
+Sem o `serve.py`, basta abrir `apresentacao/demo/index.html` no navegador. A página usa os
+números do `data.js`, e o terminal da cena 1 repete a saída do log ("replay do log"). As
+fontes e os ícones vêm de CDN. O `serve.py` não deixa nada novo em `logs/`: depois do teste do
+contrato, `logs/validation.jsonl` e `reports/validation/` voltam ao conteúdo de antes.
 
 ### Servidor de Observabilidade, Docker, Prometheus e Grafana (`T3.7`)
 
@@ -653,7 +679,9 @@ que o modelo faria com o juro antigo).
 
 ## Vídeo STAR
 
-- **Link:** a publicar (`T4.7`).
+- **Link:** [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo)
+- **Título:** Credit Risk Monitoring | Pandera, Evidently AI e XGBoost (FIAP ML Engineer – Fase 4)
+- **Duração:** 4:52, no formato STAR (Situation, Task, Action, Result).
 - **Roteiro:** [docs/roteiro-video-star.md](docs/roteiro-video-star.md), com a fala, a tela
   e o tempo de cada bloco (meta de ~4:45, limite de 4:59).
 

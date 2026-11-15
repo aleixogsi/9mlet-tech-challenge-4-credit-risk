@@ -21,7 +21,7 @@ cada escolha, está na seção 5 de [plano-etapa-4.md](plano-etapa-4.md).
 | Tela | O que é | Onde |
 |---|---|---|
 | **Deck** | `Tech_Challenge_4_STAR.pptx`, 11 slides; as notas trazem o tempo de cada bloco | `apresentacao/` (local, fora do Git) |
-| **Página** | página de demonstração "vértice", 5 cenas (celular à esquerda, Central de Risco à direita); o botão "Testar lote com erro" roda o contrato de verdade dentro da página | `apresentacao/demo/index.html` (local, fora do Git) |
+| **Página** | página de demonstração "vértice", 5 cenas (celular à esquerda, Central de Risco à direita); o botão "Testar lote com erro" roda o contrato de verdade dentro da página | `apresentacao/demo/index.html` (versionada, D19) |
 | **Terminal** | só no plano B do A2, se o botão não funcionar | raiz do repositório |
 | **Evidently** | relatório real de drift da janela t5, aberto em duas abas (tabela e PSI por coluna) | `reports/drift/drift_t5.html` |
 | **README** | seção "Etapa 4: Governança e LGPD" no GitHub | navegador |
