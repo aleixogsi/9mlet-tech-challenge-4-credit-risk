@@ -3,9 +3,9 @@
 data/**
 !data/**/
 !data/**/.gitkeep
-# Dataset bruto: descomente SOMENTE se a licença permitir redistribuição (T0.2),
-# para o avaliador rodar o projeto sem conta no Kaggle.
-# !data/raw/credit_risk_dataset.csv
+# Dataset bruto: versionado porque a licença é CC0 (domínio público), para o avaliador
+# rodar o projeto sem conta no Kaggle (decisão D7).
+!data/raw/credit_risk_dataset.csv
 
 # Segredos
 .env
