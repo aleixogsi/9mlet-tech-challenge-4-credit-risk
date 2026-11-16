@@ -5,8 +5,7 @@
 >
 > **Vídeo STAR (4:52):** [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo)
 
-O projeto é desenvolvido em quatro etapas. O status das tarefas e os responsáveis estão
-em [TODO.md](TODO.md).
+O projeto é desenvolvido em quatro etapas.
 
 ## Contexto
 
@@ -30,7 +29,7 @@ uv run pytest
 Depois, abra [reports/monitoring/index.html](reports/monitoring/index.html) no navegador. O
 CSV bruto já está versionado em `data/raw/` (licença CC0), então não é preciso conta no
 Kaggle. O `run_pipeline.py` apaga e regrava `logs/`; os logs versionados são os da execução
-final (T3.8).
+final.
 
 ## Mapa de evidências
 
@@ -40,9 +39,9 @@ Onde está a prova de cada critério de avaliação do enunciado.
 |---|---|---|
 | Validação de dados | 25% | contrato em [src/credit_risk/contracts/schemas.py](src/credit_risk/contracts/schemas.py); bloqueio com exit code 1 em `scripts/validate_data.py --make-bad-batch`; regras violadas em [reports/validation/bad_batch_failures.csv](reports/validation/bad_batch_failures.csv); histórico em [logs/validation.jsonl](logs/validation.jsonl); testes em [tests/test_contracts.py](tests/test_contracts.py) |
 | Detecção de drift | 25% | cenários em [configs/drift_scenarios.yaml](configs/drift_scenarios.yaml); relatórios Evidently em [reports/drift/](reports/drift/) (`drift_t1..t5.html`, `performance_t1..t5.html`); PSI e KS por feature em `psi_ks_t1..t5.csv`; resumo em [reports/drift/drift_summary.json](reports/drift/drift_summary.json) |
-| Observabilidade e logs | 20% | painel em [reports/monitoring/index.html](reports/monitoring/index.html); logs em [logs/](logs/) (predições sem PII, validação e alertas); métricas Prometheus em [reports/monitoring/metrics.prom](reports/monitoring/metrics.prom); Grafana via `docker compose up`; página de demonstração do vídeo em [apresentacao/demo/](apresentacao/demo/) |
+| Observabilidade e logs | 20% | painel em [reports/monitoring/index.html](reports/monitoring/index.html); logs em [logs/](logs/) (predições sem PII, validação e alertas); métricas Prometheus em [reports/monitoring/metrics.prom](reports/monitoring/metrics.prom); Grafana via `docker compose up`; página de demonstração do vídeo em [./docs/apresentacao/demo/](./docs/apresentacao/demo/) |
 | Governança (LGPD) | 15% | seção [Etapa 4: Governança e LGPD](#etapa-4-governança-e-lgpd) deste README; vieses em [reports/training/fairness.csv](reports/training/fairness.csv) e [fairness_windows.csv](reports/training/fairness_windows.csv) |
-| Vídeo STAR | 15% | [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo) (4:52); detalhes na seção [Vídeo STAR](#vídeo-star); roteiro em [docs/roteiro-video-star.md](docs/roteiro-video-star.md) |
+| Vídeo STAR | 15% | [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo) (4:52); detalhes na seção [Vídeo STAR](#vídeo-star) |
 
 ## Stack
 
@@ -242,7 +241,7 @@ Leitura dos resultados:
 | `reports/drift/performance_<janela>.html` | Relatório Evidently de performance (concept drift) |
 | `reports/drift/psi_ks_<janela>.csv` | PSI, p-valor do KS e status por feature |
 | `reports/drift/drift_summary.json` | Resumo consumido pelo monitoramento (Etapa 3) |
-| `logs/predictions.jsonl` | Log de predições sem PII (versionado só na execução final, T3.8) |
+| `logs/predictions.jsonl` | Log de predições sem PII (versionado na execução final) |
 
 ## Etapa 3: Observabilidade e monitoramento
 
@@ -261,11 +260,11 @@ Para executar todo o pipeline ponta a ponta (Etapas 1 a 4):
 uv run python scripts/run_pipeline.py
 ```
 
-### Registro centralizado de predições sem PII (`T3.1`)
+### Registro centralizado de predições sem PII
 
 O módulo `src/credit_risk/monitoring/prediction_logger.py` implementa `log_predictions` e `read_predictions`, garantindo que cada linha gravada em `logs/predictions.jsonl` contenha exclusivamente os campos autorizados (`timestamp`, `window`, `record_id`, `score`, `decision`, `latency_ms`, `model_version`) e que `record_id` seja obrigatoriamente um hash SHA-256 hexadecimal de 64 caracteres (bloqueando qualquer tentativa de gravar identificadores originais ou PII).
 
-### Métricas de saúde operacionais e do modelo (`T3.2` e `T3.6`)
+### Métricas de saúde operacionais e do modelo
 
 O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de inferência, validação e drift em uma tabela por janela (`compute_health`), cobrindo quatro dimensões de observabilidade:
 
@@ -276,7 +275,7 @@ O módulo `src/credit_risk/monitoring/health.py` consolida os artefatos de infer
 | **Data drift** | `n_features`, `n_drifted`, `share_drifted`, `drifted_features` | Quantificar a proporção de variáveis de entrada que sofreram mudança estatística (PSI > 0,25 ou KS p-valor < 0,05) |
 | **Performance (Concept drift)** | `auc`, `reference_auc`, `auc_drop`, `ks`, `gini` | Medir a perda de poder discriminante do classificador frente à mudança na relação `P(y\|X)` |
 
-### Regras de alerta de degradação (`T3.3`)
+### Regras de alerta de degradação
 
 O módulo `src/credit_risk/monitoring/alerts.py` avalia a tabela de saúde contra os limiares de `src/credit_risk/config.py` e registra os eventos em `logs/alerts.jsonl`:
 
@@ -298,7 +297,7 @@ Nas janelas simuladas (`t1` a `t5`) e na validação do lote inválido (`bad_bat
 
 No total são 9 alertas: 7 críticos e 2 de atenção.
 
-### Painel HTML e artefatos de monitoramento (`T3.4` e `T3.5`)
+### Painel HTML e artefatos de monitoramento
 
 O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/monitor.py` geram [reports/monitoring/index.html](reports/monitoring/index.html), reunindo:
 1. **KPIs executivos** e **Tabela de Métricas de Saúde por Janela (`t1`..`t5`)**, com destaque visual (`cell-warning` e `cell-critical`) nas métricas que cruzam os limiares;
@@ -312,9 +311,9 @@ O módulo `src/credit_risk/monitoring/dashboard.py` e o entrypoint `scripts/moni
 | `logs/validation.jsonl` | Histórico centralizado de lotes aprovados e bloqueados pelo contrato Pandera |
 | `logs/predictions.jsonl` | Log centralizado de predições por janela, pseudonimizado (SHA-256 + salt) e sem PII |
 | `logs/alerts.jsonl` | Alertas estruturados disparados pelas regras de degradação e qualidade |
-| `tests/fixtures/mocks/` | Mocks dos contratos de interface (`T3.0`) para testes unitários rápidos da Etapa 3 |
+| `tests/fixtures/mocks/` | Mocks dos contratos de interface para testes unitários rápidos da Etapa 3 |
 
-### Página de demonstração do vídeo (`apresentacao/demo/`)
+### Página de demonstração do vídeo (`./docs/apresentacao/demo/`)
 
 O vídeo usa uma página com a marca fictícia "vértice": o app do cliente fica à esquerda e a
 Central de Risco à direita. Ela não tem números próprios. O `build_data.py` gera o `data.js`
@@ -326,21 +325,19 @@ confere que os números da página batem com esses artefatos e que nenhum ID com
 | `index.html`, `styles.css` | a página, com 5 cenas (setas do teclado ou botão "Próxima etapa") |
 | `data.js` | números da execução final, gerados pelo `build_data.py` (não edite à mão) |
 | `build_data.py` | lê `logs/*.jsonl`, `reports/training/metrics.json` e `reports/drift/drift_summary.json`; com `data/` local, inclui também os histogramas de `loan_int_rate` |
-| `serve.py` | servidor local opcional. Com ele, o modelo responde ao vivo, o celular sorteia clientes com o drift da janela aplicado (D17) e o botão "Testar lote com erro" roda o contrato de verdade (D18) |
+| `serve.py` | servidor local opcional. Com ele, o modelo responde ao vivo, o celular sorteia clientes com o drift da janela aplicado e o botão "Testar lote com erro" roda o contrato de verdade |
 
 ```bash
-uv run python apresentacao/demo/build_data.py   # regrava o data.js depois de rodar o pipeline
-uv run python apresentacao/demo/serve.py        # http://127.0.0.1:8765/?cena=1 (precisa de models/ e data/)
+uv run python ./docs/apresentacao/demo/build_data.py   # regrava o data.js depois de rodar o pipeline
+uv run python ./docs/apresentacao/demo/serve.py        # http://127.0.0.1:8765/?cena=1 (precisa de models/ e data/)
 ```
 
-Sem o `serve.py`, basta abrir `apresentacao/demo/index.html` no navegador. A página usa os
+Sem o `serve.py`, basta abrir `./docs/apresentacao/demo/index.html` no navegador. A página usa os
 números do `data.js`, e o terminal da cena 1 repete a saída do log ("replay do log"). As
 fontes e os ícones vêm de CDN. O `serve.py` não deixa nada novo em `logs/`: depois do teste do
 contrato, `logs/validation.jsonl` e `reports/validation/` voltam ao conteúdo de antes.
 
-### Servidor de Observabilidade, Docker, Prometheus e Grafana (`T3.7`)
-
-> 📖 **Guia didático completo da Etapa 3:** consulte [docs/etapa-3-observabilidade.md](docs/etapa-3-observabilidade.md) para uma explicação simplificada e passo a passo de toda a arquitetura de observabilidade construída.
+### Servidor de Observabilidade, Docker, Prometheus e Grafana
 
 Além de gerar os arquivos estáticos em `reports/monitoring/`, o projeto inclui um **Servidor HTTP Unificado** (`src/credit_risk/monitoring/server.py`), um `Dockerfile` e um `docker-compose.yml` que sobem 3 serviços integrados (`monitor`, `prometheus` e `grafana`) com provisioning automático:
 
@@ -557,8 +554,7 @@ Medidas adotadas:
 - atributos sensíveis (gênero, raça, estado civil) não existem no dataset e não seriam
   usados como feature;
 - a idade foi mantida como feature (1,5% da importância) com medição de viés a cada
-  execução; retirá-la refaria todas as evidências das Etapas 1 a 3 (decisão D9, em
-  [docs/plano-etapa-4.md](docs/plano-etapa-4.md#6-decisões-a-tomar));
+  execução; retirá-la refaria todas as evidências das Etapas 1 a 3;
 - `loan_intent = MEDICAL` foi tratado como potencialmente sensível (ver "Base legal");
 - o relatório de vieses faz parte do `run_pipeline.py`, então roda sempre junto com o
   drift.
@@ -682,8 +678,6 @@ que o modelo faria com o juro antigo).
 - **Link:** [https://youtu.be/efrBXjaSIYo](https://youtu.be/efrBXjaSIYo)
 - **Título:** Credit Risk Monitoring | Pandera, Evidently AI e XGBoost (FIAP ML Engineer – Fase 4)
 - **Duração:** 4:52, no formato STAR (Situation, Task, Action, Result).
-- **Roteiro:** [docs/roteiro-video-star.md](docs/roteiro-video-star.md), com a fala, a tela
-  e o tempo de cada bloco (meta de ~4:45, limite de 4:59).
 
 ## Equipe
 

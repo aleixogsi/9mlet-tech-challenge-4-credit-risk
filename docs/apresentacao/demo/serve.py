@@ -1,6 +1,6 @@
 """Servidor local da página de demonstração, com o modelo real respondendo ao vivo.
 
-Serve os arquivos de apresentacao/demo/ e expõe:
+Serve os arquivos de docs/apresentacao/demo/ e expõe:
 - GET /api/status  → versão e AUC do modelo carregado;
 - GET /api/predict?window=t1 → sorteia uma proposta da janela, passa pelo contrato de
   inferência, prediz com models/baseline_v1.joblib e devolve score, decisão, latência e o
@@ -26,7 +26,7 @@ comando do contrato grava uma linha em logs/validation.jsonl e regrava o relató
 como no terminal; logo depois, os dois arquivos voltam ao conteúdo que tinham antes.
 
 Uso (na raiz do repositório, depois de rodar o pipeline):
-    uv run python apresentacao/demo/serve.py
+    uv run python docs/apresentacao/demo/serve.py
     → http://127.0.0.1:8765/?cena=1
 """
 

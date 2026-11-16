@@ -1,10 +1,10 @@
-# Dados (nunca versionar: podem conter PII; ver context/02-convencoes.md)
+# Dados (nunca versionar: podem conter PII)
 # (ignora todo o conteúdo, mas mantém a estrutura de pastas via .gitkeep)
 data/**
 !data/**/
 !data/**/.gitkeep
 # Dataset bruto: versionado porque a licença é CC0 (domínio público), para o avaliador
-# rodar o projeto sem conta no Kaggle (decisão D7).
+# rodar o projeto sem conta no Kaggle.
 !data/raw/credit_risk_dataset.csv
 
 # Segredos
@@ -18,16 +18,15 @@ models/*.joblib
 models/*.json
 !models/.gitkeep
 
-# Logs finais da execução versionados para auditoria (T3.8)
+# Logs finais da execução versionados para auditoria
 !logs/*.jsonl
 !logs/.gitkeep
 
-# Material de apresentação: o deck e a edição do vídeo ficam locais (D14). A página de
-# demonstração mostrada no vídeo é versionada, sem os prints de aprovação (D19).
-!apresentacao/
-apresentacao/*
-!apresentacao/demo/
-apresentacao/demo/shots/
+# Material de apresentação: apenas a página de demonstração é versionada.
+!docs/apresentacao/
+docs/apresentacao/*
+!docs/apresentacao/demo/
+docs/apresentacao/demo/shots/
 
 # Python
 __pycache__/
@@ -40,9 +39,6 @@ venv/
 .mypy_cache/
 .coverage
 htmlcov/
-
-# Claude Code (configs pessoais)
-.claude/settings.local.json
 
 # SO / IDE
 .DS_Store

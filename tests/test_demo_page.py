@@ -1,4 +1,4 @@
-"""Testes da página de demonstração do vídeo (apresentacao/demo/, D19).
+"""Testes da página de demonstração do vídeo (docs/apresentacao/demo/).
 
 A página mostra os números de `data.js`, gerado por `build_data.py` a partir dos artefatos
 versionados. Os testes garantem que esses números batem com `logs/` e `reports/` e que nenhum
@@ -17,7 +17,7 @@ import pytest
 
 from credit_risk import config
 
-DEMO_DIR = config.ROOT_DIR / "apresentacao" / "demo"
+DEMO_DIR = config.ROOT_DIR / "docs" / "apresentacao" / "demo"
 DATA_JS = DEMO_DIR / "data.js"
 # A latência muda a cada execução do pipeline; o resto é reprodutível com a seed.
 VOLATILE_KEYS = {"latency_p50", "latency_p95"}
@@ -42,7 +42,7 @@ def stable(windows: list[dict]) -> list[dict]:
 @pytest.fixture(scope="module")
 def page_data() -> dict:
     if not DATA_JS.exists():
-        pytest.skip("apresentacao/demo/data.js não existe")
+        pytest.skip("docs/apresentacao/demo/data.js não existe")
     return read_data_js()
 
 
@@ -52,7 +52,7 @@ def test_page_numbers_match_versioned_artifacts(page_data: dict) -> None:
     fresh = load_module("build_data").build()
     assert page_data["model"] == fresh["model"]
     assert page_data["validation"] == fresh["validation"]
-    assert page_data["alerts"] == fresh["alerts"], "rode apresentacao/demo/build_data.py"
+    assert page_data["alerts"] == fresh["alerts"], "rode docs/apresentacao/demo/build_data.py"
     assert stable(page_data["windows"]) == stable(fresh["windows"])
 
 

@@ -1,4 +1,4 @@
-"""Gera apresentacao/demo/data.js com os números reais da execução versionada.
+"""Gera docs/apresentacao/demo/data.js com os números reais da execução versionada.
 
 Fontes: reports/training/metrics.json, reports/drift/drift_summary.json e logs/*.jsonl.
 Se data/ existir localmente, inclui também os histogramas reais de loan_int_rate
@@ -6,7 +6,7 @@ Se data/ existir localmente, inclui também os histogramas reais de loan_int_rat
 record_id pseudonimizado, e a página só mostra o começo e o fim do hash.
 
 Uso (na raiz do repositório):
-    uv run python apresentacao/demo/build_data.py
+    uv run python docs/apresentacao/demo/build_data.py
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 OUT = Path(__file__).resolve().parent / "data.js"
 WINDOWS = ["t1", "t2", "t3", "t4", "t5"]
 RATE_EDGES = list(np.arange(5.0, 29.0, 1.0))  # faixas de 1 p.p. entre 5% e 28%
