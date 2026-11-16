@@ -9,11 +9,17 @@ from credit_risk.contracts.schemas import build_training_schema
 from credit_risk.contracts.validator import DataContractError, validate_or_block
 
 
+@pytest.fixture(autouse=True)
+def _isolate_validation_log(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(config, "LOGS_DIR", tmp_path)
+    monkeypatch.setattr(config, "VALIDATION_LOG", tmp_path / "validation.jsonl")
+
+
 def valid_frame(rows: int = 8) -> pd.DataFrame:
     return pd.DataFrame(
         {
             config.ID_COLUMN: [f"id-{i}" for i in range(rows)],
-            "person_age": [30.0] * rows,
+            "person_age": [30.0 + i for i in range(rows)],
             "person_income": [50_000.0] * rows,
             "person_emp_length": [5.0] * rows,
             "loan_amnt": [10_000.0] * rows,
@@ -56,6 +62,15 @@ def test_duplicate_rows_are_blocked() -> None:
     assert_blocked(frame)
 
 
+def test_duplicate_content_with_new_id_is_blocked() -> None:
+    frame = valid_frame()
+    frame.loc[1] = frame.loc[0].copy()
+    frame.loc[1, config.ID_COLUMN] = "id-novo"
+    with pytest.raises(DataContractError) as error:
+        validate_or_block(frame, build_training_schema(), "dup")
+    assert "no_duplicate_rows" in error.value.failures["check"].astype(str).tolist()
+
+
 def test_invalid_income_is_blocked() -> None:
     frame = valid_frame()
     frame.loc[0, "person_income"] = config.MAX_INCOME + 1
@@ -77,3 +92,21 @@ def test_invalid_target_is_blocked() -> None:
 def test_bad_batch_violates_every_rule() -> None:
     batch = make_bad_batch(valid_frame(), config.SEED)
     assert_blocked(batch)
+
+
+def test_failure_report_pseudonymizes_ids(tmp_path, monkeypatch) -> None:
+    from credit_risk.contracts.validator import write_validation_report
+
+    monkeypatch.setenv(config.PSEUDONYMIZATION_SALT_ENV, "segredo")
+    frame = valid_frame()
+    frame.loc[1, config.ID_COLUMN] = frame.loc[0, config.ID_COLUMN]
+    with pytest.raises(DataContractError) as error:
+        validate_or_block(frame, build_training_schema(), "dup")
+
+    output = write_validation_report(error.value.failures, "dup", tmp_path)
+    report = pd.read_csv(output)
+
+    id_cases = report.loc[report["column"] == config.ID_COLUMN, "failure_case"]
+    assert not id_cases.empty
+    assert "id-0" not in output.read_text(encoding="utf-8")
+    assert id_cases.str.fullmatch(r"[0-9a-f]{64}").all()

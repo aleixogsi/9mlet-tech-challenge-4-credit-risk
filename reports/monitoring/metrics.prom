@@ -1,0 +1,102 @@
+# HELP credit_risk_window_volume Total de predições processadas na janela
+# TYPE credit_risk_window_volume gauge
+credit_risk_window_volume{window="t1"} 5000.0
+credit_risk_window_volume{window="t2"} 5000.0
+credit_risk_window_volume{window="t3"} 5000.0
+credit_risk_window_volume{window="t4"} 5000.0
+credit_risk_window_volume{window="t5"} 5000.0
+# HELP credit_risk_null_predictions_ratio Proporção de predições nulas ou com erro na janela
+# TYPE credit_risk_null_predictions_ratio gauge
+credit_risk_null_predictions_ratio{window="t1"} 0.0
+credit_risk_null_predictions_ratio{window="t2"} 0.0
+credit_risk_null_predictions_ratio{window="t3"} 0.0
+credit_risk_null_predictions_ratio{window="t4"} 0.0
+credit_risk_null_predictions_ratio{window="t5"} 0.0
+# HELP credit_risk_blocked_batches_ratio Proporção de lotes bloqueados pelo contrato Pandera na janela
+# TYPE credit_risk_blocked_batches_ratio gauge
+credit_risk_blocked_batches_ratio{window="t1"} 0.0
+credit_risk_blocked_batches_ratio{window="t2"} 0.0
+credit_risk_blocked_batches_ratio{window="t3"} 0.0
+credit_risk_blocked_batches_ratio{window="t4"} 0.0
+credit_risk_blocked_batches_ratio{window="t5"} 0.0
+# HELP credit_risk_latency_p50_ms Latência mediana (p50) de inferência em milissegundos
+# TYPE credit_risk_latency_p50_ms gauge
+credit_risk_latency_p50_ms{window="t1"} 4.7675
+credit_risk_latency_p50_ms{window="t2"} 4.203749999999999
+credit_risk_latency_p50_ms{window="t3"} 4.2295
+credit_risk_latency_p50_ms{window="t4"} 4.307
+credit_risk_latency_p50_ms{window="t5"} 4.3452
+# HELP credit_risk_latency_p95_ms Latência p95 de inferência em milissegundos
+# TYPE credit_risk_latency_p95_ms gauge
+credit_risk_latency_p95_ms{window="t1"} 5.6525
+credit_risk_latency_p95_ms{window="t2"} 4.7777
+credit_risk_latency_p95_ms{window="t3"} 4.5497
+credit_risk_latency_p95_ms{window="t4"} 5.2661
+credit_risk_latency_p95_ms{window="t5"} 5.2953
+# HELP credit_risk_mean_score Score médio de probabilidade de default na janela
+# TYPE credit_risk_mean_score gauge
+credit_risk_mean_score{window="t1"} 0.2169186765612103
+credit_risk_mean_score{window="t2"} 0.2295508315904066
+credit_risk_mean_score{window="t3"} 0.29258248395014086
+credit_risk_mean_score{window="t4"} 0.377407032048679
+credit_risk_mean_score{window="t5"} 0.44288553971706424
+# HELP credit_risk_approval_rate Taxa de aprovação de crédito na janela
+# TYPE credit_risk_approval_rate gauge
+credit_risk_approval_rate{window="t1"} 0.8396
+credit_risk_approval_rate{window="t2"} 0.838
+credit_risk_approval_rate{window="t3"} 0.7902
+credit_risk_approval_rate{window="t4"} 0.6768
+credit_risk_approval_rate{window="t5"} 0.5942
+# HELP credit_risk_prediction_psi PSI da distribuição do score predito (prediction drift)
+# TYPE credit_risk_prediction_psi gauge
+credit_risk_prediction_psi{window="t1"} 0.002733466224433302
+credit_risk_prediction_psi{window="t2"} 0.019907432076814294
+credit_risk_prediction_psi{window="t3"} 0.2134832154525201
+credit_risk_prediction_psi{window="t4"} 0.5497367962542312
+credit_risk_prediction_psi{window="t5"} 0.8427443477230797
+# HELP credit_risk_drifted_features_count Quantidade de features com drift detectado na janela
+# TYPE credit_risk_drifted_features_count gauge
+credit_risk_drifted_features_count{window="t1"} 2.0
+credit_risk_drifted_features_count{window="t2"} 3.0
+credit_risk_drifted_features_count{window="t3"} 4.0
+credit_risk_drifted_features_count{window="t4"} 5.0
+credit_risk_drifted_features_count{window="t5"} 4.0
+# HELP credit_risk_share_drifted Proporção de features com drift detectado na janela
+# TYPE credit_risk_share_drifted gauge
+credit_risk_share_drifted{window="t1"} 0.1818
+credit_risk_share_drifted{window="t2"} 0.2727
+credit_risk_share_drifted{window="t3"} 0.3636
+credit_risk_share_drifted{window="t4"} 0.4545
+credit_risk_share_drifted{window="t5"} 0.3636
+# HELP credit_risk_auc ROC AUC do modelo na janela de produção
+# TYPE credit_risk_auc gauge
+credit_risk_auc{window="t1"} 0.9292638754196597
+credit_risk_auc{window="t2"} 0.9117654524250531
+credit_risk_auc{window="t3"} 0.891752738643182
+credit_risk_auc{window="t4"} 0.8450518483868678
+credit_risk_auc{window="t5"} 0.8062732802759274
+# HELP credit_risk_auc_drop Queda de ROC AUC em relação à referência
+# TYPE credit_risk_auc_drop gauge
+credit_risk_auc_drop{window="t1"} 0.0
+credit_risk_auc_drop{window="t2"} 0.0155919126171713
+credit_risk_auc_drop{window="t3"} 0.03560462639904238
+credit_risk_auc_drop{window="t4"} 0.08230551665535668
+credit_risk_auc_drop{window="t5"} 0.12108408476629706
+# HELP credit_risk_ks Estatística KS de separação do modelo na janela
+# TYPE credit_risk_ks gauge
+credit_risk_ks{window="t1"} 0.7252583503723145
+credit_risk_ks{window="t2"} 0.6845716238021851
+credit_risk_ks{window="t3"} 0.6591806411743164
+credit_risk_ks{window="t4"} 0.5732462406158447
+credit_risk_ks{window="t5"} 0.494503378868103
+# HELP credit_risk_alerts_total Total de alertas disparados por janela, tipo e severidade
+# TYPE credit_risk_alerts_total gauge
+credit_risk_alerts_total{severity="critical",type="contract_blocked",window="bad_batch"} 1.0
+credit_risk_alerts_total{severity="critical",type="data_drift",window="t3"} 1.0
+credit_risk_alerts_total{severity="warning",type="prediction_drift",window="t3"} 1.0
+credit_risk_alerts_total{severity="critical",type="data_drift",window="t4"} 1.0
+credit_risk_alerts_total{severity="critical",type="prediction_drift",window="t4"} 1.0
+credit_risk_alerts_total{severity="warning",type="performance_drop",window="t4"} 1.0
+credit_risk_alerts_total{severity="critical",type="data_drift",window="t5"} 1.0
+credit_risk_alerts_total{severity="critical",type="prediction_drift",window="t5"} 1.0
+credit_risk_alerts_total{severity="critical",type="performance_drop",window="t5"} 1.0

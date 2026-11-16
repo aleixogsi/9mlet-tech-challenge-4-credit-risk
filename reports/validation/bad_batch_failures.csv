@@ -1,6 +1,7 @@
 schema_context,column,check,check_number,failure_case,index
-Column,application_id,field_uniqueness,,application_00009043,0
-Column,application_id,field_uniqueness,,application_00009043,4
+DataFrameSchema,,no_duplicate_rows,0,False,
+Column,application_id,field_uniqueness,,d6027dc2bf33f724d8c90eb1825ce992ff2d8b490e47035ad8be3d57687d04be,0
+Column,application_id,field_uniqueness,,d6027dc2bf33f724d8c90eb1825ce992ff2d8b490e47035ad8be3d57687d04be,4
 Column,person_age,"in_range(18, 100)",0,17.0,0
 Column,person_age,"in_range(18, 100)",0,17.0,4
 Column,person_income,not_nullable,,,1

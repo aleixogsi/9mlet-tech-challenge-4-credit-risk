@@ -1,0 +1,8 @@
+{"timestamp": "2026-11-01T11:50:00Z", "batch_name": "reference", "rows": 17180, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-01T11:55:00Z", "batch_name": "bad_batch", "rows": 500, "status": "blocked", "n_failures": 12, "failed_rules": ["no_duplicates", "person_age_range", "person_income_range"]}
+{"timestamp": "2026-11-01T12:00:00Z", "batch_name": "t1", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-02T12:00:00Z", "batch_name": "t2", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-03T12:00:00Z", "batch_name": "t3", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-04T11:58:00Z", "batch_name": "t4", "rows": 5000, "status": "blocked", "n_failures": 3, "failed_rules": ["person_age_range"]}
+{"timestamp": "2026-11-04T12:00:00Z", "batch_name": "t4", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-05T12:00:00Z", "batch_name": "t5", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}

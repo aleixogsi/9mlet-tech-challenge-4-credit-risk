@@ -1,0 +1,8 @@
+{"timestamp": "2026-11-15T15:53:00.114636+00:00", "batch_name": "reference", "rows": 17098, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:02.448800+00:00", "batch_name": "bad_batch", "rows": 17098, "status": "blocked", "n_failures": 8, "failed_rules": ["field_uniqueness", "in_range(18, 100)", "isin(['PERSONAL', 'EDUCATION', 'MEDICAL', 'VENTURE', 'HOMEIMPROVEMENT', 'DEBTCONSOLIDATION'])", "isin([0, 1])", "no_duplicate_rows", "not_nullable"]}
+{"timestamp": "2026-11-15T15:53:04.734976+00:00", "batch_name": "reference", "rows": 17098, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:19.710804+00:00", "batch_name": "t1", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:20.082654+00:00", "batch_name": "t2", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:20.364660+00:00", "batch_name": "t3", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:20.645561+00:00", "batch_name": "t4", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}
+{"timestamp": "2026-11-15T15:53:20.943709+00:00", "batch_name": "t5", "rows": 5000, "status": "passed", "n_failures": 0, "failed_rules": []}

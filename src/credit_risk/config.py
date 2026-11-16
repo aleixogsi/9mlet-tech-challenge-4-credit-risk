@@ -74,10 +74,28 @@ MAX_INCOME = 10_000_000.0
 PSI_WARNING = 0.10  # 0.10–0.25: atenção
 PSI_DRIFT = 0.25  # > 0.25: drift
 KS_PVALUE = 0.05  # p-valor < 0.05: distribuições diferentes
+DRIFT_WINDOW_SIZE = 5_000  # linhas por janela de produção simulada (t1..tN)
 
 # --- Health / alert thresholds (Etapa 3) -------------------------------------
 APPROVAL_THRESHOLD = 0.5  # score de default acima disso → crédito negado
+PREDICTION_BATCH_SIZE = 100  # registros por chamada do modelo (micro-lote) em predict.py
+PSEUDONYMIZATION_SALT_ENV = "PSEUDONYMIZATION_SALT"  # variável de ambiente do salt (LGPD)
 ALERT_DRIFT_SHARE = 0.30  # alerta se ≥ 30% das features derivarem
 ALERT_NULL_PREDICTIONS_PCT = 0.01  # alerta se > 1% de predições nulas
 ALERT_LATENCY_P95_MS = 200.0
 ALERT_AUC_DROP = 0.05  # alerta se a AUC cair mais que 0.05 vs. referência
+
+# --- Fairness / vieses (Etapa 4) ---------------------------------------------
+VALIDATION_FRACTION = 0.2  # holdout da Referência usado na avaliação e no relatório de vieses
+AGE_BAND_COLUMN = "age_band"  # derivada de person_age; só para análise, nunca é feature
+# (rótulo, idade mínima, idade máxima), limites inclusivos
+AGE_BANDS = [
+    ("18-25", 18, 25),
+    ("26-35", 26, 35),
+    ("36-45", 36, 45),
+    ("46-60", 46, 60),
+    ("61+", 61, MAX_AGE),
+]
+FAIRNESS_GROUPS = [AGE_BAND_COLUMN, "person_home_ownership"]
+FAIRNESS_MIN_RATIO = 0.8  # "regra dos 4/5": aprovação do grupo ÷ maior aprovação
+FAIRNESS_MIN_GROUP_SIZE = 30  # grupos menores não recebem AUC nem alerta de disparidade

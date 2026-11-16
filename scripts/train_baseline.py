@@ -10,13 +10,12 @@ import logging
 from datetime import UTC, datetime
 
 import joblib
-from sklearn.model_selection import train_test_split
 
 from credit_risk import config
 from credit_risk.contracts.schemas import build_training_schema
 from credit_risk.contracts.validator import validate_or_block
 from credit_risk.training.evaluate import evaluate, feature_importance
-from credit_risk.training.train import train_baseline
+from credit_risk.training.train import split_reference, train_baseline
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +26,7 @@ def main() -> None:
 
     reference = pd.read_parquet(config.REFERENCE_FILE)
     reference = validate_or_block(reference, build_training_schema(), "reference")
-    train, valid = train_test_split(
-        reference, test_size=0.2, random_state=config.SEED, stratify=reference[config.TARGET]
-    )
+    train, valid = split_reference(reference)
     model = train_baseline(train)
     metrics = evaluate(model, valid[config.FEATURES], valid[config.TARGET])
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
